@@ -22,6 +22,8 @@
 | configs/metrics_map.yaml | vLLM metric names (unverified until Phase 5) |
 | src/isa/common/config.py | StrictModel, SLOConfig, MetricsMap, load_yaml |
 | tests/test_config.py | Config loading and validation tests |
+| src/isa/common/log.py | setup_logging, get_logger, JSON/console formatters |
+| tests/test_log.py | Logging format, filtering, and safety tests |
 
 ## Pinned dependencies
 isa v0.1.0

@@ -1,7 +1,5 @@
 """Typed config loading. Every config file in the project goes through load_yaml."""
-
 from pathlib import Path
-from typing import TypeVar
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
@@ -41,10 +39,7 @@ class MetricsMap(StrictModel):
         return f"{self.tpot_hist}_bucket"
 
 
-M = TypeVar("M", bound=BaseModel)
-
-
-def load_yaml(path: str | Path, model: type[M]) -> M:
+def load_yaml[M: BaseModel](path: str | Path, model: type[M]) -> M:
     """Load a YAML file and validate it against a pydantic model.
 
     Raises FileNotFoundError if the file is missing, ValueError if the top level

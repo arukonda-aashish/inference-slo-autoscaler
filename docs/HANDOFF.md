@@ -7,9 +7,8 @@ Inference SLO Autoscaler: autoscaling LLM serving on queue-derived signals
 instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
 
 ## Current state
-- Phase: 0 (skeleton)
-- Last completed step: 2 — config models and dev tooling
-- Next step: 3 — structured logging
+- Last completed step: 3 — structured logging
+- Next step: 4 — mock replica engine (pure simulation, no HTTP)
 
 ## Decisions
 - D1: Custom controller with pluggable backends, not KEDA. RunPod pods are
@@ -26,6 +25,9 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
   coordinated omission.
 - D6: Metric names come from configs/metrics_map.yaml, never hardcoded;
   vLLM renames metrics across versions.
+- D7: Stdlib logging with a thin EventLogger wrapper, not structlog. No extra
+  dependency; uvicorn and httpx already use stdlib logging. JSON lines carry
+  an epoch "t" for joining logs against the load generator CSV.
 
 ## Open questions
 - Is co-located scaling near-additive? (E1b)
