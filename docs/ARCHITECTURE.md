@@ -1,6 +1,3 @@
-Understood on the workflow: no zip, we build it one file at a time, I tell you exactly when to create a file or install something, and every edit or debug fix uses your before/after template. Once you've reviewed this, the architecture itself becomes the first file in the repo (docs/ARCHITECTURE.md), so we don't lose it between sessions.
-
-One correction to what I said earlier, because it shapes the whole design: RunPod pods are unprivileged containers. You can't run Docker or k3s inside one. So "KEDA on k3s inside the pod" isn't viable. The architecture below uses a custom controller with pluggable actuators instead. That's a better portfolio piece anyway, since the scaling logic becomes code you wrote rather than YAML you configured, and KEDA stays available as a stretch goal against the local mock setup.
 
 1. System overview
 
