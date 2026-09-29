@@ -8,8 +8,8 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
 
 ## Current state
 - Phase: 0 (skeleton)
-- Last completed step: 1 — tooling, repo, docs
-- Next step: 2 — config models and dev tooling
+- Last completed step: 2 — config models and dev tooling
+- Next step: 3 — structured logging
 
 ## Decisions
 - D1: Custom controller with pluggable backends, not KEDA. RunPod pods are
