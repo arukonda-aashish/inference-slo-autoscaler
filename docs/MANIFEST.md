@@ -24,6 +24,9 @@
 | tests/test_config.py | Config loading and validation tests |
 | src/isa/common/log.py | setup_logging, get_logger, JSON/console formatters |
 | tests/test_log.py | Logging format, filtering, and safety tests |
+| configs/mock_engine.yaml | Mock engine parameters (placeholders until Phase 6 calibration) |
+| src/isa/mock_replica/engine.py | Continuous-batching simulator: admission, chunked prefill, KV blocks, preemption |
+| tests/test_mock_engine.py | Engine timing, admission, preemption, and queueing tests |
 
 ## Pinned dependencies
 isa v0.1.0

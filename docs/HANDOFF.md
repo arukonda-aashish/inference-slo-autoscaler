@@ -7,8 +7,8 @@ Inference SLO Autoscaler: autoscaling LLM serving on queue-derived signals
 instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
 
 ## Current state
-- Last completed step: 3 — structured logging
-- Next step: 4 — mock replica engine (pure simulation, no HTTP)
+- Last completed step: 4 — mock replica engine (pure simulation)
+- Next step: 5 — mock replica HTTP server: async driver, SSE streaming, /metrics
 
 ## Decisions
 - D1: Custom controller with pluggable backends, not KEDA. RunPod pods are
@@ -32,6 +32,10 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
 ## Open questions
 - Is co-located scaling near-additive? (E1b)
 - Actual T_cold on the pod? (E0)
+- Does KV memory bind on the real server? At 0.5B (~12 KB KV/token) and
+  gpu-memory-utilization 0.28, likely not: sequence slots and step time will.
+  If E1 shows no KV pressure, constrain it with --num-gpu-blocks-override.
+  The mock config is deliberately KV-tight so the mechanism is tested either way.
 
 ## Budget
 RunPod credits: ~$14. GPU hours used: 0.
