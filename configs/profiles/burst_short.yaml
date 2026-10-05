@@ -1,0 +1,12 @@
+# Baseline, a 30s burst, then recovery. The workload for the E2-E4 comparisons.
+name: burst_short
+seed: 42
+phases:
+  - {duration_s: 60, rate_rps: 4}
+  - {duration_s: 30, rate_rps: 16}
+  - {duration_s: 120, rate_rps: 4}
+prompt_tokens:
+  mixture:
+    - {weight: 0.7, range: [100, 300]}
+    - {weight: 0.3, range: [2000, 3500]}
+max_tokens: {range: [64, 256]}

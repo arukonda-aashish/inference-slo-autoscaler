@@ -7,6 +7,7 @@ create several apps in one process without duplicate-metric errors.
 import random
 
 from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, generate_latest
+
 from isa.common.buckets import TPOT_BUCKETS, TTFT_BUCKETS
 from isa.common.config import MetricsMap
 from isa.mock_replica.engine import Engine, StepResult

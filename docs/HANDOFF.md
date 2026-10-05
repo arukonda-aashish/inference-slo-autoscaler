@@ -39,6 +39,18 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
   streaming starts. Decrement happens before any await (cancellation-safe).
 - D12: Upstream read timeout is None. Long queue waits under overload are the
   measurement, not an error.
+- D13: TTFT is measured from the request's intended arrival time, not its send
+  time: the latency a user would experience. Dispatch lag is bounded by the
+  validity check, so the two can't silently diverge.
+- D14: Arrival times and request sizes use separate seeded random streams, so
+  changing the size mix never moves an arrival.
+- D15: The load generator self-validates: dispatch lag p99 <= 50 ms, peak
+  in-flight below the connection limit, no requests cancelled at drain, at
+  least one success, and non-429 error rate <= 1%. Invalid runs exit with
+  code 2. A preflight request aborts dead targets before the clock starts
+  (exit 3). 429s are excluded from the error rate: shedding is a measurement.
+  Origin: a burst run against stopped replicas returned 726/726 502s and was
+  reported valid.
 
 ## Open questions
 - Is co-located scaling near-additive? (E1b)
@@ -50,6 +62,16 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
 - Verify in Phase 5: prompt word count == vLLM usage.prompt_tokens for loadgen prompts.
 - Verify in Phase 5: does vLLM observe TPOT per token or per request? The mock
   observes each request's mean once; match vLLM's semantics before calibrating.
+- Profile rates must be set relative to measured capacity. burst_short is now
+  set from the mock's measured mu; re-derive from real E1 before GPU runs.
+- E1 steps must be long (minutes, not 30s): at 12 rps the queue was growing
+  but p95 still read 1.9s, under the SLO, because the step ended first. Short
+  steps also make p95 noisy (~200 samples decide it by the 10th-largest value).
 
+## Measurements
+- Mock replica, placeholder config (sweep_preview, 30s steps, direct to r1):
+  TTFT p95 0.10s @4, 0.16s @6, 0.13s @8, 0.83s @10, 1.9s @12, 10.2s @14 rps.
+  Knee between 8 and 10 rps. Service rate mu ~9.4 rps/replica, from in-flight
+  growth of ~4.6/s during the 14 rps step (growth = arrival - service).
 ## Budget
 RunPod credits: ~$14. GPU hours used: 0.

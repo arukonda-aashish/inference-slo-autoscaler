@@ -43,6 +43,16 @@
 | scripts/dev_mocks.sh | Start N mock replicas for local dev |
 | tests/test_router.py | Router relay, balancing, failure, and invariant tests |
 | tests/test_balancer.py | Balancer and registry unit tests |
+| configs/profiles/smoke.yaml | ~50 small requests in 10s, end-to-end check |
+| configs/profiles/steady.yaml | 60s constant load, realistic prompt mix |
+| configs/profiles/burst_short.yaml | Baseline, 30s burst, recovery (E2-E4 workload) |
+| src/isa/loadgen/profile.py | Profile models |
+| src/isa/loadgen/schedule.py | Seeded Poisson schedule, single-token-word prompts |
+| src/isa/loadgen/client.py | RunClock, RequestRecord, one timed streaming request |
+| src/isa/loadgen/report.py | CSV recorder, percentiles, summary with validity checks |
+| src/isa/loadgen/runner.py | Open-loop dispatch loop with drain |
+| src/isa/loadgen/__main__.py | CLI: python -m isa.loadgen (exit 2 if invalid) |
+| tests/test_loadgen.py | Schedule statistics, validity checks, end-to-end runs |
 
 ## Pinned dependencies
 isa v0.1.0

@@ -28,3 +28,5 @@ deploy/prometheus/targets/*.json
 deploy/prometheus/data/
 logs/
 *.log
+
+results/dev/

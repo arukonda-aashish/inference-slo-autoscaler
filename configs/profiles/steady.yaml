@@ -1,0 +1,10 @@
+# Moderate constant load with the realistic short/long prompt mix.
+name: steady
+seed: 2
+phases:
+  - {duration_s: 60, rate_rps: 4}
+prompt_tokens:
+  mixture:
+    - {weight: 0.7, range: [100, 300]}
+    - {weight: 0.3, range: [2000, 3500]}
+max_tokens: {range: [64, 256]}

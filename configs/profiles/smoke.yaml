@@ -1,0 +1,9 @@
+# Quick end-to-end check: ~50 small requests in 10 seconds.
+name: smoke
+seed: 1
+phases:
+  - {duration_s: 10, rate_rps: 5}
+prompt_tokens:
+  mixture:
+    - {weight: 1.0, range: [20, 100]}
+max_tokens: {range: [10, 40]}
