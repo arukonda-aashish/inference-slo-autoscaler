@@ -121,6 +121,7 @@ class StepResult:
     preempted: list[str]
     decode_seqs: int
     prefill_tokens: int
+    first_token_ttfts: list[tuple[str, float]]  # (req_id, ttft_s) for first tokens this step
 
 
 class Engine:
@@ -237,7 +238,18 @@ class Engine:
 
         # 4. Cost
         if not decoded and prefill_tokens == 0:
-            return StepResult(0.0, now, [], [], admitted, preempted, 0, 0)
+
+            return StepResult(
+                duration_s=0.0,
+                t_end=now,
+                tokens=[],
+                finished=[],
+                admitted=admitted,
+                preempted=preempted,
+                decode_seqs=0,
+                prefill_tokens=0,
+                first_token_ttfts=[],
+            )
 
         duration = (
             cfg.step_base_ms
@@ -263,6 +275,7 @@ class Engine:
             preempted=preempted,
             decode_seqs=len(decoded),
             prefill_tokens=prefill_tokens,
+            first_token_ttfts=[(r.req_id, t_end - r.arrival_t) for r in first_token],
         )
 
     # ---- internals ----------------------------------------------------------

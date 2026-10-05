@@ -7,8 +7,8 @@ Inference SLO Autoscaler: autoscaling LLM serving on queue-derived signals
 instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
 
 ## Current state
-- Last completed step: 4 — mock replica engine (pure simulation)
-- Next step: 5 — mock replica HTTP server: async driver, SSE streaming, /metrics
+- Last completed step: 5 — mock replica HTTP server
+- Next step: 6 — router: registry, least-outstanding balancing, streaming proxy
 
 ## Decisions
 - D1: Custom controller with pluggable backends, not KEDA. RunPod pods are
@@ -28,6 +28,10 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
 - D7: Stdlib logging with a thin EventLogger wrapper, not structlog. No extra
   dependency; uvicorn and httpx already use stdlib logging. JSON lines carry
   an epoch "t" for joining logs against the load generator CSV.
+- D8: Mock cold start = port not bound (connection refused), not /health 503.
+  Real vLLM binds its HTTP port only after model load.
+- D9: Mock counts prompt tokens as whitespace words. The load generator builds
+  prompts from single-token words so counts match vLLM's tokenizer.
 
 ## Open questions
 - Is co-located scaling near-additive? (E1b)
@@ -36,6 +40,9 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
   gpu-memory-utilization 0.28, likely not: sequence slots and step time will.
   If E1 shows no KV pressure, constrain it with --num-gpu-blocks-override.
   The mock config is deliberately KV-tight so the mechanism is tested either way.
+- Verify in Phase 5: prompt word count == vLLM usage.prompt_tokens for loadgen prompts.
+- Verify in Phase 5: does vLLM observe TPOT per token or per request? The mock
+  observes each request's mean once; match vLLM's semantics before calibrating.
 
 ## Budget
 RunPod credits: ~$14. GPU hours used: 0.

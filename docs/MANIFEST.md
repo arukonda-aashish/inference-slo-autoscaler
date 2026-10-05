@@ -27,6 +27,11 @@
 | configs/mock_engine.yaml | Mock engine parameters (placeholders until Phase 6 calibration) |
 | src/isa/mock_replica/engine.py | Continuous-batching simulator: admission, chunked prefill, KV blocks, preemption |
 | tests/test_mock_engine.py | Engine timing, admission, preemption, and queueing tests |
+| src/isa/mock_replica/driver.py | Async loop running the engine in real time; token delivery |
+| src/isa/mock_replica/metrics.py | Prometheus metrics named per metrics_map.yaml |
+| src/isa/mock_replica/server.py | OpenAI-compatible /v1/completions, /health, /metrics |
+| src/isa/mock_replica/__main__.py | CLI: python -m isa.mock_replica |
+| tests/test_mock_server.py | HTTP API, SSE format, metrics, and abort tests |
 
 ## Pinned dependencies
 isa v0.1.0

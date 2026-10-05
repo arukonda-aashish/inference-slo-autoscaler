@@ -182,6 +182,14 @@ def test_submit_validation():
     with pytest.raises(ValueError, match=">= 1"):
         eng.submit("c", prompt_tokens=0, max_tokens=10, now=0.0)
 
+        
+def test_first_token_ttft_reported_once():
+    eng = Engine(make_cfg())
+    eng.submit("a", prompt_tokens=100, max_tokens=3, now=0.0)
+    r = eng.step(0.0)
+    assert r.first_token_ttfts == [("a", pytest.approx(0.020))]
+    assert eng.step(r.t_end).first_token_ttfts == []
+
 
 # ---- the behavior the project is about -----------------------------------------
 
