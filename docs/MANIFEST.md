@@ -32,6 +32,17 @@
 | src/isa/mock_replica/server.py | OpenAI-compatible /v1/completions, /health, /metrics |
 | src/isa/mock_replica/__main__.py | CLI: python -m isa.mock_replica |
 | tests/test_mock_server.py | HTTP API, SSE format, metrics, and abort tests |
+| src/isa/common/buckets.py | Shared TTFT/TPOT histogram buckets |
+| src/isa/router/registry.py | Replica registry with live in-flight counts |
+| src/isa/router/balancer.py | Least-outstanding and round-robin balancers |
+| src/isa/router/config.py | RouterConfig |
+| src/isa/router/metrics.py | Router metrics incl. scrape-time per-replica collector |
+| src/isa/router/app.py | Proxy: balancing, connect retry, streaming relay |
+| src/isa/router/__main__.py | CLI: python -m isa.router |
+| configs/router.yaml | Local router config (3 static replicas) |
+| scripts/dev_mocks.sh | Start N mock replicas for local dev |
+| tests/test_router.py | Router relay, balancing, failure, and invariant tests |
+| tests/test_balancer.py | Balancer and registry unit tests |
 
 ## Pinned dependencies
 isa v0.1.0

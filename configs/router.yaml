@@ -1,0 +1,9 @@
+host: 127.0.0.1
+port: 8000
+balancer: least_outstanding
+connect_attempts: 2
+# Static until the controller owns the registry.
+replicas:
+  - {replica_id: r1, url: "http://127.0.0.1:8001"}
+  - {replica_id: r2, url: "http://127.0.0.1:8002"}
+  - {replica_id: r3, url: "http://127.0.0.1:8003"}

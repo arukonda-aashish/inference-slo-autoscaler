@@ -7,8 +7,8 @@ Inference SLO Autoscaler: autoscaling LLM serving on queue-derived signals
 instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
 
 ## Current state
-- Last completed step: 5 — mock replica HTTP server
-- Next step: 6 — router: registry, least-outstanding balancing, streaming proxy
+- Last completed step: 6 — router: registry, balancing, streaming proxy
+- Next step: 7 — load generator: open-loop Poisson schedule, profiles, lag self-check
 
 ## Decisions
 - D1: Custom controller with pluggable backends, not KEDA. RunPod pods are
@@ -32,6 +32,13 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
   Real vLLM binds its HTTP port only after model load.
 - D9: Mock counts prompt tokens as whitespace words. The load generator builds
   prompts from single-token words so counts match vLLM's tokenizer.
+- D10: Router retries only connect failures, on a different replica, before
+  any bytes are sent. Never mid-stream: tokens already reached the client.
+- D11: In-flight decrement lives in the streaming response's __call__ finally,
+  not the body generator, so it also runs when a client disconnects before
+  streaming starts. Decrement happens before any await (cancellation-safe).
+- D12: Upstream read timeout is None. Long queue waits under overload are the
+  measurement, not an error.
 
 ## Open questions
 - Is co-located scaling near-additive? (E1b)
