@@ -1,0 +1,41 @@
+# The controller's input signals, precomputed so every consumer (controller,
+# dashboards, analysis exports) sees identical values.
+# Metric names must match configs/metrics_map.yaml; tests/test_observability.py
+# enforces it.
+groups:
+  - name: isa_signals
+    interval: 2s
+    rules:
+      # ---- replica state ----
+      - record: isa:waiting:sum
+        expr: sum(vllm:num_requests_waiting)
+      - record: isa:running:sum
+        expr: sum(vllm:num_requests_running)
+      # Worst replica, not the mean: one replica at 98% is about to preempt
+      # even when the average looks fine.
+      - record: isa:kv_usage:max
+        expr: max(vllm:kv_cache_usage_perc)
+      # Least-squares slope over the window: far less noisy than differencing
+      # two samples. Positive means arrivals exceed service.
+      - record: isa:waiting:slope30s
+        expr: deriv(isa:waiting:sum[30s])
+
+      # ---- latency ----
+      - record: isa:ttft:p95_30s
+        expr: histogram_quantile(0.95, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket[30s])))
+      - record: isa:ttft:p99_30s
+        expr: histogram_quantile(0.99, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket[30s])))
+      - record: isa:tpot:p95_30s
+        expr: histogram_quantile(0.95, sum by (le) (rate(vllm:time_per_output_token_seconds_bucket[30s])))
+      - record: isa:router_ttft:p95_30s
+        expr: histogram_quantile(0.95, sum by (le) (rate(router_ttft_seconds_bucket[30s])))
+
+      # ---- the baseline policy's input ----
+      - record: isa:gpu_util:avg
+        expr: avg(isa_gpu_utilization_percent)
+
+      # ---- load ----
+      - record: isa:arrival:rps30s
+        expr: sum(rate(router_arrivals_total[30s]))
+      - record: isa:router_inflight:sum
+        expr: sum(router_inflight)

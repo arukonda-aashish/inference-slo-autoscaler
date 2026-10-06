@@ -26,6 +26,7 @@ build/
 # Runtime state (regenerated every run)
 deploy/prometheus/targets/*.json
 deploy/prometheus/data/
+deploy/grafana/data/
 logs/
 *.log
 

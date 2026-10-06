@@ -53,6 +53,14 @@
 | src/isa/loadgen/runner.py | Open-loop dispatch loop with drain |
 | src/isa/loadgen/__main__.py | CLI: python -m isa.loadgen (exit 2 if invalid) |
 | tests/test_loadgen.py | Schedule statistics, validity checks, end-to-end runs |
+| deploy/prometheus/prometheus.yml | Scrape config, identical on Mac and pod |
+| deploy/prometheus/rules.yml | Recording rules: the controller's input signals |
+| deploy/grafana/provisioning/datasources/prometheus.yml | Grafana datasource |
+| deploy/grafana/provisioning/dashboards/provider.yml | Dashboard provider |
+| deploy/grafana/dashboards/isa-overview.json | Main dashboard incl. TTFT-vs-GPU-util panel |
+| scripts/dev_observability.sh | Run local Prometheus + Grafana from repo config |
+| configs/profiles/sweep_preview.yaml | Single-replica capacity preview |
+| tests/test_observability.py | Metric-name consistency across config, rules, dashboard |
 
 ## Pinned dependencies
 isa v0.1.0

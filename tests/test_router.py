@@ -203,6 +203,7 @@ async def test_metrics_endpoint():
     async with router_env() as (client, _):
         await client.post("/v1/completions", json=body(stream=True))
         text = (await client.get("/metrics")).text
+        assert "router_arrivals_total 1.0" in text
         assert 'router_requests_total{code="200"} 1.0' in text
         assert "router_ttft_seconds_count 1.0" in text
         assert 'router_inflight{replica="r1"} 0.0' in text

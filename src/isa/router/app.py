@@ -106,6 +106,7 @@ def create_app(cfg: RouterConfig, http_client: httpx.AsyncClient | None = None) 
     @app.post("/v1/completions")
     async def completions(request: Request) -> Response:
         t0 = time.perf_counter()
+        metrics.arrivals.inc()
         body = await request.body()
         try:
             stream = bool(json.loads(body).get("stream", False))

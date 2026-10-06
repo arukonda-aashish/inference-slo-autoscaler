@@ -7,8 +7,8 @@ Inference SLO Autoscaler: autoscaling LLM serving on queue-derived signals
 instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
 
 ## Current state
-- Last completed step: 6 — router: registry, balancing, streaming proxy
-- Next step: 7 — load generator: open-loop Poisson schedule, profiles, lag self-check
+- Last completed step: 8 — local observability
+- Next step: 9 — controller: signals, policies, stabilizer (pure, unit-tested)
 
 ## Decisions
 - D1: Custom controller with pluggable backends, not KEDA. RunPod pods are
@@ -51,6 +51,14 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
   (exit 3). 429s are excluded from the error rate: shedding is a measurement.
   Origin: a burst run against stopped replicas returned 726/726 502s and was
   reported valid.
+- D16: No Docker anywhere, local included. Prometheus and Grafana are Homebrew
+  binaries on the Mac, so prometheus.yml is byte-identical on Mac and pod
+  (all targets on 127.0.0.1). Supersedes the Compose part of D2.
+- D17: Router counts offered load (router_arrivals_total) on receipt, separate
+  from responses (router_requests_total), so lambda is measurable under overload.
+- D18: tests/test_observability.py enforces metric-name consistency across
+  metrics_map.yaml, rules.yml, and the dashboard JSON.
+  
 
 ## Open questions
 - Is co-located scaling near-additive? (E1b)

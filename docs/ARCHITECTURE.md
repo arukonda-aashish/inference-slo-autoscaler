@@ -12,11 +12,11 @@ flowchart LR
   LG --> CSV[(Request CSV)]
   C --> DL[(Decision log)]
 ```
-The system splits into a data plane (purple: requests flowing through) and a control plane (teal: observing and deciding). That separation is the first design principle, and it drives a rule that shows up everywhere below: data plane decisions use local, real-time state; control plane decisions use scraped, slightly stale metrics. The router never waits on Prometheus to decide whether to reject a request, and the controller never needs per-request precision.
+The system splits into a data plane (load generator, router, replicas: requests flowing through) and a control plane (Prometheus, controller: observing and deciding). That separation is the first design principle, and it drives a rule that shows up everywhere below: data plane decisions use local, real-time state; control plane decisions use scraped, slightly stale metrics. The router never waits on Prometheus to decide whether to reject a request, and the controller never needs per-request precision.
 
 Five design principles govern everything else:
 
-No Docker in the run path. Every service is a plain Python process; Prometheus is a single binary. Compose is a local convenience only. This is what makes the same code run on your Mac and on a RunPod pod.
+No Docker anywhere. Every service is a plain Python process; Prometheus and Grafana are standalone binaries (Homebrew on the Mac). This is what makes the same code and the same prometheus.yml run unchanged on the Mac and on a RunPod pod (D16).
 Mock and real are interchangeable. The mock replica speaks the same HTTP API and emits the same metric names as vLLM. Nothing upstream knows which one it's talking to.
 Policies are pure functions. signals in → decision out, no I/O. That makes the one piece that matters fully unit-testable.
 Every decision is logged with its inputs. The decision log is the primary evidence in the writeup, not a debugging aid.
@@ -25,8 +25,8 @@ Every run is reproducible. Seeded arrivals, config snapshot, git SHA, all writte
 	Local dev (Mac)	GPU run (RunPod 3090)
 Replicas	Mock replicas, spawned as subprocesses	vllm serve subprocesses sharing one GPU
 Router, controller, loadgen	Python processes (uv venv)	Same
-Prometheus	Docker Compose	Standalone binary
-Grafana	Docker Compose	Runs on your Mac, reads pod Prometheus over an SSH tunnel
+Prometheus	Homebrew binary	Standalone binary
+Grafana	Homebrew binary	Runs on your Mac, reads pod Prometheus over an SSH tunnel
 GPU metrics	Mock emits a fake gpu_utilization gauge	gpu_exporter via NVML
 Cost	Free	~$0.20–0.40/hr
 
@@ -54,7 +54,7 @@ step_time_ms = a + b · batch_size + c · prefill_tokens_this_step
 
 Each step, it admits waiting requests while free KV blocks remain (blocks = ceil(tokens / 16)), charges prefill cost for newly admitted requests, emits one token per running sequence, grows KV allocation as sequences lengthen, and retires finished sequences. It emits the same waiting, running, KV usage, and TTFT/TPOT histogram metrics as vLLM, plus a fake gpu_utilization gauge that reads ~0 when idle and ~95–99% whenever anything is running. That last detail is what lets you reproduce the baseline scaler's failure without a GPU.
 
-It also simulates cold start: /health returns 503 for a configurable duration after launch.
+It also simulates cold start: the process doesn't bind its port for a configurable duration after launch, so health checks see connection refused, matching real vLLM, which binds only after the model has loaded (D8).
 
 Calibration. Parameters a, b, c, total KV blocks, and cold start duration are fitted from the real Phase 3 measurements (vLLM logs its KV cache capacity at startup). Then E1 is rerun on the mock, and the two capacity curves are compared. If they diverge badly, the mock is lying and you fix it before trusting anything built against it. That validation step is worth a paragraph in the writeup on its own.
 
@@ -62,23 +62,23 @@ Calibration. Parameters a, b, c, total KV blocks, and cold start duration are fi
 
 A FastAPI async reverse proxy and the single entry point for all traffic. Four responsibilities.
 
-Registry sync. Polls the controller's GET /replicas every second and routes only to replicas in READY. If the controller is unreachable, it keeps its last known set (fail static) rather than dropping everything.
+Registry sync. Routes only to replicas in READY. Fed from static config (configs/router.yaml) until the controller exists; then it polls the controller's GET /replicas every second. If the controller is unreachable, it keeps its last known set (fail static) rather than dropping everything. On a connect failure, it retries a different replica, since nothing reached the first one (D10). It never retries mid-stream.
 
 Balancing. Least-outstanding-requests, using the router's own in-flight counter per replica. Round robin is wrong here: with a mixed prompt-length distribution, it piles long requests onto one replica while another sits light. The balancer choice is configurable so you can show the difference if you want.
 
 Admission control. A per-replica cap K_max on outstanding requests, derived from the E1 knee (the largest concurrency where p95 TTFT still meets the SLO). When every ready replica is at K_max, the router returns 429 with Retry-After. This decision uses the router's local counters, never Prometheus.
 
-Streaming proxy. httpx.AsyncClient.stream upstream, Starlette's StreamingResponse downstream with manual SSE framing. Per what you hit in PatchOps: no sse-starlette, and no request.is_disconnected() inside the generator. Client disconnects are handled in the generator's finally block by closing the upstream stream, which makes vLLM abort the request and free its KV blocks. Every response carries an X-Replica-Id header so the load generator can attribute latency per replica.
+Streaming proxy. httpx.AsyncClient.stream upstream; the response bytes are relayed unchanged through a StreamingResponse subclass. No sse-starlette, and no request.is_disconnected() polling. Cleanup lives in the response's __call__ finally rather than the body generator's, so it also runs when a client disconnects before streaming starts; the in-flight decrement happens before any await, so cancellation can't skip it (D11). Closing the upstream connection makes the replica abort the request and free its KV blocks. Upstream read timeout is None: long queue waits under overload are the measurement (D12). Every response carries an X-Replica-Id header so the load generator can attribute latency per replica.
 
-Router metrics: router_requests_total{code}, router_inflight{replica}, router_rejected_total, and a router_ttft_seconds histogram. The router-observed TTFT is a cross-check against vLLM's own histogram; the gap between them is your proxy overhead.
+Router metrics: router_arrivals_total (offered load, counted on receipt, D17), router_requests_total{code} (responses; 429s from admission control will appear here), router_upstream_errors_total{replica}, router_inflight{replica} and router_replica_ready{replica} (read from the registry at scrape time), and a router_ttft_seconds histogram. The router-observed TTFT is a cross-check against vLLM's own histogram; the gap between them is your proxy overhead.
 
 3.4 Load generator
 
 Open-loop, not closed-loop. This is the most important correctness property in the whole measurement system. A closed-loop generator (N workers, each sending the next request when the last one finishes) automatically slows down when the server slows down, which hides exactly the queueing you're trying to measure. This is the coordinated omission problem. The generator here precomputes the full arrival schedule from a seeded Poisson process and fires each request at its scheduled time regardless of whether earlier ones have completed.
 
-It also records its own scheduling lag (actual send time minus intended send time). If p99 lag exceeds 50ms, the generator itself is saturated and the run is flagged invalid. A benchmark that can't tell when its own instrument is broken isn't a benchmark.
+It validates itself. A run is invalid (exit code 2) if dispatch lag p99 exceeds 50 ms, peak in-flight reaches the client connection limit, any request is still in flight at the drain timeout, nothing succeeded, or the non-429 error rate exceeds 1%. A preflight request aborts a dead target before the clock starts (exit code 3). TTFT is measured from each request's intended arrival time: the latency a user would see (D13, D15). A benchmark that can't tell when its own instrument, or the system under test, is broken isn't a benchmark.
 
-Controlled workload. Requests use ignore_eos: true with an explicit max_tokens, so output length is determined by the experiment, not by the model deciding when to stop. Prompts are built to exact token lengths using the Qwen tokenizer, each with a random prefix so prefix caching can't give some requests a free prefill. (That's also why prefix caching is disabled on the server — belt and braces.)
+Controlled workload. Requests use ignore_eos: true with an explicit max_tokens, so output length is determined by the experiment, not by the model deciding when to stop. Prompts are random sequences from a vocabulary of words that are each a single token in Qwen's tokenizer, so word count equals token count without loading a tokenizer (D9; verified against vLLM's usage.prompt_tokens on the first GPU run). Random word order means no two prompts share a prefix, so prefix caching can't give some requests a free prefill. (Prefix caching is also disabled on the server — belt and braces.) Arrival times and request sizes come from separate seeded streams, so changing the size mix never moves an arrival (D14).
 
 Profiles are YAML:
 
@@ -86,16 +86,16 @@ yaml
 name: burst_short
 seed: 42
 phases:
-  - {duration_s: 60,  rate_rps: 2}
-  - {duration_s: 30,  rate_rps: 12}   # the burst
-  - {duration_s: 120, rate_rps: 2}
+  - {duration_s: 60,  rate_rps: 4}    # ~0.4x measured mock mu: fits on 1 replica
+  - {duration_s: 30,  rate_rps: 16}   # the burst: ~1.7x mu, needs 2 replicas
+  - {duration_s: 120, rate_rps: 4}
 prompt_tokens:
   mixture:
     - {weight: 0.7, range: [100, 300]}
     - {weight: 0.3, range: [2000, 3500]}
 max_tokens: {range: [64, 256]}
 
-One CSV row per request: req_id, phase, intended_ts, sent_ts, first_token_ts, last_token_ts, prompt_tokens, output_tokens, status, replica_id, error.
+One CSV row per request: req_id, phase, intended_ts, prompt_tokens, max_tokens, sent_ts, first_token_ts, last_token_ts, output_tokens, server_prompt_tokens, status, replica_id, error. Rows are written as requests complete, and cancelled requests still get a row (status -1), so a run can never silently drop its slowest requests.
 
 3.5 Controller
 
@@ -201,9 +201,9 @@ yaml
 - record: isa:ttft:p95_30s
   expr: histogram_quantile(0.95, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket[30s])))
 - record: isa:arrival:rps30s
-  expr: sum(rate(router_requests_total[30s]))
+  expr: sum(rate(router_arrivals_total[30s]))
 
-deriv() does a least-squares linear fit over the window, which is far more robust to scrape noise than differencing two samples.
+deriv() does a least-squares linear fit over the window, which is far more robust to scrape noise than differencing two samples. tests/test_observability.py enforces that the metric names in metrics_map.yaml, rules.yml, and the dashboard JSON all agree, so a rename can't produce a silently empty panel (D18).
 
 Grafana dashboards are provisioned from JSON in the repo: an SLO panel (p95/p99 TTFT with the SLO line), queue depth, replica count by state, GPU utilization, rejection rate, and controller decisions as annotations on the time axis.
 
@@ -232,6 +232,8 @@ Flapping	Scale-down stabilization window and scale-up cooldown.
 Overshoot during boot	Pending-capacity accounting.
 Load generator saturation	Scheduling-lag check invalidates the run.
 Forgotten pod burning credits	Watchdog (§8).
+
+
 6. Known risk: co-located replicas
 
 The honest weak point. Three replicas on one GPU don't have three GPUs' worth of capacity. Without MPS, CUDA time-slices between processes rather than running their kernels concurrently. A 0.5B model tends to be bottlenecked on per-step CPU and kernel-launch overhead rather than the GPU itself, which leaves idle gaps another process can fill — so scaling may be close to additive, but that's a hypothesis, not a fact.
@@ -267,26 +269,27 @@ inference-slo-autoscaler/
 │   ├── profiles/                 # steady.yaml sweep.yaml burst_short.yaml …
 │   └── experiments/              # e0 … e6
 ├── src/isa/
-│   ├── common/                   # config models, logging, types
-│   ├── mock_replica/             # engine.py server.py metrics.py
-│   ├── router/                   # app.py registry.py balancer.py admission.py proxy.py
+│   ├── common/                   # config.py log.py buckets.py
+│   ├── mock_replica/             # engine.py driver.py server.py metrics.py __main__.py
+│   ├── router/                   # app.py registry.py balancer.py config.py metrics.py __main__.py
 │   ├── controller/
 │   │   ├── loop.py  signals.py  stabilizer.py  lifecycle.py  api.py  sd.py
 │   │   ├── policies/             # base.py util.py queue.py predictive.py
 │   │   └── backends/             # base.py mock.py process.py
-│   ├── loadgen/                  # schedule.py prompts.py client.py recorder.py cli.py
+│   ├── loadgen/                  # profile.py schedule.py client.py report.py runner.py __main__.py
 │   ├── gpu_exporter/
 │   └── analysis/                 # load.py charts.py report.py
 ├── deploy/
 │   ├── prometheus/               # prometheus.yml rules.yml targets/
-│   ├── grafana/                  # provisioning/ dashboards/
-│   └── docker-compose.yml        # local only
-├── scripts/                      # run_experiment.py pod_bootstrap.sh pod_watchdog.sh
+│   └── grafana/                  # provisioning/ dashboards/
+├── scripts/                      # dev_mocks.sh dev_observability.sh (later: run_experiment.py pod_bootstrap.sh pod_watchdog.sh)
 ├── tests/
 └── results/
+
+
 10. Stack
 
-Python 3.12 with uv for environment and dependency management. FastAPI + uvicorn for the router, controller API, and mock. httpx for all async HTTP. prometheus-client for exporting metrics. pydantic v2 + pydantic-settings for typed config. PyYAML for profiles. nvidia-ml-py for NVML. transformers (tokenizer only, no torch) for exact prompt lengths. pandas + matplotlib for analysis. pytest + pytest-asyncio for tests. vLLM pinned to one version on the pod. Versions get pinned at install time and recorded in MANIFEST.md.
+Python 3.12 with uv for environment and dependency management. FastAPI + uvicorn for the router, controller API, and mock. httpx for all async HTTP. prometheus-client for exporting metrics. pydantic v2 for typed config. PyYAML for profiles and config. nvidia-ml-py for NVML (pod only). Prometheus and Grafana as Homebrew binaries locally, standalone binaries on the pod. pandas + matplotlib for analysis (to be added). pytest + pytest-asyncio for tests. vLLM pinned to one version on the pod. Versions get pinned at install time and recorded in MANIFEST.md.
 
 11. Build order
 

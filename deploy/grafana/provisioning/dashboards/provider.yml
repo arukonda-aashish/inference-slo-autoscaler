@@ -1,0 +1,9 @@
+apiVersion: 1
+providers:
+  - name: isa
+    folder: ISA
+    type: file
+    allowUiUpdates: true
+    options:
+      # ISA_REPO is exported by scripts/dev_observability.sh
+      path: ${ISA_REPO}/deploy/grafana/dashboards

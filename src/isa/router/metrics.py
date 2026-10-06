@@ -35,6 +35,11 @@ class RouterMetrics:
     def __init__(self, registry: Registry) -> None:
         self.registry = CollectorRegistry()
         self.registry.register(_ReplicaCollector(registry))
+                # Counted on receipt, before routing: offered load, including requests that
+        # end up rejected or failed. router_requests counts responses instead.
+        self.arrivals = Counter(
+            "router_arrivals", "Requests received (offered load)", registry=self.registry
+        )
         self.requests = Counter(
             "router_requests", "Requests by response status", ["code"], registry=self.registry
         )
