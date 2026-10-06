@@ -1,0 +1,7 @@
+policy:
+  kind: predictive
+  target_concurrency: 12
+  kv_high: 0.9
+  mu_rps: 9.4       # measured mock service rate (sweep_preview); re-derive from E1
+  rho_target: 0.7
+  t_cold_s: 50      # mock cold start (~30s) + detection delay (~20s, ARCHITECTURE §4)

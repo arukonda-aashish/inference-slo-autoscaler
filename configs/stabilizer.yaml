@@ -1,0 +1,6 @@
+# Shared by every policy, so comparisons measure policies, not damping.
+min_replicas: 1
+max_replicas: 3      # VRAM bound on the 3090: three replicas at 0.28 each
+max_step_up: 2
+up_cooldown_s: 30    # ~mock cold start; set to measured T_cold (E0) for GPU runs
+down_window_s: 90

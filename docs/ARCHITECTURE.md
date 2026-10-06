@@ -133,7 +133,7 @@ Policies implement one interface:
 python
 class Policy(Protocol):
     name: str
-    def decide(self, s: Signals, cfg: PolicyConfig) -> Decision: ...
+    def decide(self, s: Signals) -> Decision: ...  # config is bound at construction
 
 @dataclass(frozen=True)
 class Decision:
@@ -145,7 +145,9 @@ Three policies, each a step up in sophistication:
 
 Policy	Rule	Role
 UtilPolicy	ceil(current × util / target) — the HPA formula	Baseline. Expected to fail.
-QueuePolicy	ceil(current × (waiting per replica / target)), with a KV-pressure override	The first correct signal
+QueuePolicy	ceil(currenUtilPolicy	ceil(current × util / target), held within HPA's 10% tolerance band — the HPA formula, faithfully	Baseline. Expected to fail.
+QueuePolicy	ceil((running + waiting) / target_concurrency), Knative-style, with a KV-pressure override	The first correct signal
+PredictivePolicy	max of ceil(λ / (μ · ρ_target)) and ceil((running + waiting + max(slope, 0) × T_cold) / target_concurrency)	Accounts for cold startt × (waiting per replica / target)), with a KV-pressure override	The first correct signal
 PredictivePolicy	Size for waiting + slope × T_cold (projected queue when a new replica would actually arrive), floored by the Little's-law capacity model ceil(λ / (μ · ρ_target))	Accounts for cold start
 
 PredictivePolicy is the interesting one. μ is per-replica service rate measured in E1, ρ_target is a target utilization (say 0.7), and T_cold is the measured cold start. It asks: "given how fast the queue is growing, what will it be by the time a new replica is ready?" rather than "what is it now?" That's the direct answer to the cold-start floor problem.
@@ -154,7 +156,8 @@ Stabilizer turns a raw desired count into a safe action:
 
 Pending-capacity accounting. Effective current = ready + starting. Without this, the controller sees a high queue while replica 2 is still booting, adds replica 3, then 4, and overshoots. This is the classic autoscaler bug and worth a deliberate test.
 Scale-up: at most +2 per tick, then a cooldown equal to T_cold.
-Scale-down: use the max desired over a 90-second window, so a brief lull doesn't trigger a drain.
+Scale-down: only if every desired value over a 90-second window was below current, so a brief lull doesn't trigger a drain; one replica per action; never while a replica is starting or draining.
+Every outcome, including every kind of hold, carries a named reason for the decision log. The stabilizer is shared by all policies, so comparisons measure policies, not damping (D21).
 Hard bounds: min_replicas, max_replicas (the latter derived from VRAM: 3 on the 3090).
 Stale data means hold. If signals.stale, no action. Never scale on missing data, and never interpret "Prometheus is down" as "load is zero."
 

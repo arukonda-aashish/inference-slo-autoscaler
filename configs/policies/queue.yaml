@@ -1,0 +1,8 @@
+# Outstanding requests per replica (Knative-style concurrency target).
+# target_concurrency: per-replica load where TTFT p95 meets the SLO with headroom.
+# Mock value from sweep_preview (~16-19 in flight at 8 rps was still stable);
+# re-derive from real E1 before GPU runs.
+policy:
+  kind: queue
+  target_concurrency: 12
+  kv_high: 0.9

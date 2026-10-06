@@ -7,8 +7,9 @@ Inference SLO Autoscaler: autoscaling LLM serving on queue-derived signals
 instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
 
 ## Current state
-- Last completed step: 8 — local observability
-- Next step: 9 — controller: signals, policies, stabilizer (pure, unit-tested)
+- Last completed step: 9 — controller brain: signals, policies, stabilizer (pure)
+- Next step: 10 — controller runtime: metrics source with staleness, mock
+  backend, lifecycle state machine, control loop, decision log, router sync
 
 ## Decisions
 - D1: Custom controller with pluggable backends, not KEDA. RunPod pods are
@@ -58,6 +59,17 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
   from responses (router_requests_total), so lambda is measurable under overload.
 - D18: tests/test_observability.py enforces metric-name consistency across
   metrics_map.yaml, rules.yml, and the dashboard JSON.
+- D19: UtilPolicy is the HPA formula implemented faithfully, incl. the 10%
+  tolerance band, so its failure is the signal's fault, not a strawman's.
+- D20: QueuePolicy scales on outstanding requests (running + waiting) against
+  a per-replica target concurrency (Knative-style), not on waiting alone:
+  waiting == 0 doesn't mean spare capacity, and a waiting-only policy would
+  scale a saturated pool down and oscillate.
+- D21: One stabilizer config (configs/stabilizer.yaml) is shared by every
+  policy, so comparisons aren't confounded by differences in damping.
+- D22: Scale-down is one replica per action, only when every desired value in
+  the window is below current, and never while a replica is starting or
+  draining. Every stabilizer outcome has a named reason.
   
 
 ## Open questions
@@ -75,6 +87,10 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
 - E1 steps must be long (minutes, not 30s): at 12 rps the queue was growing
   but p95 still read 1.9s, under the SLO, because the step ended first. Short
   steps also make p95 noisy (~200 samples decide it by the 10th-largest value).
+- E2 should run UtilPolicy at two targets (80 and 99): at 80 it should scale
+  to max under light load (over-provisioning); at 99 it should never scale
+  (SLO violations). Showing both demonstrates no threshold works.
+- target_concurrency (12) and mu_rps (9.4) are mock values; re-derive from E1.
 
 ## Measurements
 - Mock replica, placeholder config (sweep_preview, 30s steps, direct to r1):

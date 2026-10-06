@@ -61,6 +61,15 @@
 | scripts/dev_observability.sh | Run local Prometheus + Grafana from repo config |
 | configs/profiles/sweep_preview.yaml | Single-replica capacity preview |
 | tests/test_observability.py | Metric-name consistency across config, rules, dashboard |
+| src/isa/controller/signals.py | Signals dataclass: current (ready + starting), outstanding |
+| src/isa/controller/policies.py | Decision, UtilPolicy, QueuePolicy, PredictivePolicy, configs |
+| src/isa/controller/stabilizer.py | Bounds, step cap, cooldown, scale-down window, named reasons |
+| configs/stabilizer.yaml | Shared stabilizer settings |
+| configs/policies/util.yaml | Baseline HPA-on-GPU-util policy |
+| configs/policies/queue.yaml | Concurrency-target policy |
+| configs/policies/predictive.yaml | Arrival-capacity + projected-queue policy |
+| tests/test_policies.py | Policy formulas, incl. the util-can't-tell test |
+| tests/test_stabilizer.py | Pending accounting, cooldowns, window, flapping |
 
 ## Pinned dependencies
 isa v0.1.0

@@ -28,10 +28,10 @@ def test_prometheus_config_wires_rules_and_replica_discovery():
     assert {"router", "replicas"} <= set(jobs)
     assert jobs["replicas"]["file_sd_configs"][0]["files"] == ["targets/replicas.json"]
 
-
 def test_rules_use_mapped_metric_names():
     exprs = " ".join(r["expr"] for r in rules())
-    for name in (NAMES.waiting, NAMES.running, NAMES.kv_usage, NAMES.ttft_bucket, NAMES.tpot_bucket):
+    expected = (NAMES.waiting, NAMES.running, NAMES.kv_usage, NAMES.ttft_bucket, NAMES.tpot_bucket)
+    for name in expected:
         assert name in exprs, f"{name} from metrics_map.yaml is not used by any rule"
 
 
