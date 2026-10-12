@@ -7,9 +7,8 @@ Inference SLO Autoscaler: autoscaling LLM serving on queue-derived signals
 instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
 
 ## Current state
-- Last completed step: 9 — controller brain: signals, policies, stabilizer (pure)
-- Next step: 10 — controller runtime: metrics source with staleness, mock
-  backend, lifecycle state machine, control loop, decision log, router sync
+- Last completed step: 10a — metrics source, lifecycle, mock backend, health, targets
+- Next step: 10b — control loop, decision log, controller API, router sync, CLI
 
 ## Decisions
 - D1: Custom controller with pluggable backends, not KEDA. RunPod pods are
@@ -70,6 +69,17 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
 - D22: Scale-down is one replica per action, only when every desired value in
   the window is below current, and never while a replica is starting or
   draining. Every stabilizer outcome has a named reason.
+- D23: Stabilizer checks bounds before staleness. Found while designing
+  staleness handling: when every replica dies, metrics vanish, signals go
+  stale, and "stale -> hold" would deadlock at zero replicas.
+- D24: Staleness = Prometheus unreachable, any required series missing, or the
+  rule group's sample age > max_age_s. Instant-query timestamps are evaluation
+  times and always look fresh; time() - timestamp(x) gives true sample age.
+- D25: Replica ids are never reused (r1, r2, ...); ports are.
+- D26: Replicas run in their own process group (start_new_session), so a
+  Ctrl-C to the controller doesn't kill them mid-generation. The controller
+  owns their shutdown and drains first. Orphan cleanup after a controller
+  crash (discover()) is deferred.
   
 
 ## Open questions

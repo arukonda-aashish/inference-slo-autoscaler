@@ -1,10 +1,12 @@
 """Stabilizer: turns a policy's raw desired count into a safe action.
 
 Order of checks each tick:
-  1. Stale signals -> hold. Never scale on missing data, and never read
+  1. Bounds restored immediately, cooldowns and staleness notwithstanding.
+     Replica counts are the controller's own state, not metrics, so they're
+     valid even when signals are stale. (When every replica dies its metrics
+     vanish and signals go stale; holding then would deadlock at zero.)
+  2. Stale signals -> hold. Never scale on missing data, and never read
      "Prometheus is down" as "load is zero".
-  2. Bounds restored immediately, cooldowns notwithstanding: below min means a
-     replica failed, and that's not a decision to deliberate over.
   3. Scale up: compared against ready + starting (pending accounting), at most
      max_step_up per action, then an up-cooldown.
   4. Scale down: only if every desired value over the last down_window_s was
@@ -64,14 +66,14 @@ class Stabilizer:
         def act(target: int, reason: str) -> Action:
             return Action(target, current, desired, bounded, reason)
 
-        if s.stale:
-            return act(current, "hold_stale_signals")  # also: not recorded in history
-
         if current < cfg.min_replicas:
             self._last_up_ts = now
             return act(cfg.min_replicas, "restore_min")
         if current > cfg.max_replicas:
             return act(cfg.max_replicas, "enforce_max")
+
+        if s.stale:
+            return act(current, "hold_stale_signals")  # also: not recorded in history
 
         self._history.append((now, bounded))
         while self._history and self._history[0][0] < now - cfg.down_window_s:

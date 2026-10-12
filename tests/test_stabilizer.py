@@ -78,3 +78,9 @@ def test_restore_min_ignores_cooldown():
     st.apply(3, sig(ready=1), now=0)  # starts the up-cooldown
     a = st.apply(1, sig(ready=0), now=5)  # every replica crashed
     assert (a.target, a.reason) == (1, "restore_min")
+
+def test_restore_min_even_when_signals_are_stale():
+    # Every replica died, so its metrics vanished and signals went stale.
+    # Holding here would deadlock: no replica, so no metrics, so no action.
+    a = make().apply(1, sig(ready=0, stale=True), now=0)
+    assert (a.target, a.reason) == (1, "restore_min")

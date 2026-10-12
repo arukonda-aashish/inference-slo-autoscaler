@@ -70,6 +70,15 @@
 | configs/policies/predictive.yaml | Arrival-capacity + projected-queue policy |
 | tests/test_policies.py | Policy formulas, incl. the util-can't-tell test |
 | tests/test_stabilizer.py | Pending accounting, cooldowns, window, flapping |
+| src/isa/controller/metrics_source.py | PromQL reads, staleness detection, build_signals |
+| src/isa/controller/lifecycle.py | Phase state machine, Pool, router view, scrape targets |
+| src/isa/controller/targets.py | Atomic Prometheus file_sd writer |
+| src/isa/controller/health.py | Health probe and warmup gates |
+| src/isa/controller/backends/base.py | ReplicaBackend protocol |
+| src/isa/controller/backends/mock.py | Spawns/terminates mock replica subprocesses |
+| tests/test_lifecycle.py | Transitions, ids/ports, router view, targets file |
+| tests/test_metrics_source.py | Staleness cases, rule-name consistency |
+| tests/test_mock_backend.py | Real-process spawn, probe, warmup, terminate |
 
 ## Pinned dependencies
 isa v0.1.0

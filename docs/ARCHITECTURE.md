@@ -159,7 +159,8 @@ Scale-up: at most +2 per tick, then a cooldown equal to T_cold.
 Scale-down: only if every desired value over a 90-second window was below current, so a brief lull doesn't trigger a drain; one replica per action; never while a replica is starting or draining.
 Every outcome, including every kind of hold, carries a named reason for the decision log. The stabilizer is shared by all policies, so comparisons measure policies, not damping (D21).
 Hard bounds: min_replicas, max_replicas (the latter derived from VRAM: 3 on the 3090).
-Stale data means hold. If signals.stale, no action. Never scale on missing data, and never interpret "Prometheus is down" as "load is zero."
+Stale data means hold. If signals.stale, no action. Never scale on missing data, and never interpret "Prometheus is down" as "load is zero." The one exception is restoring bounds, which is checked first: replica counts are the controller's own state, not metrics, so they're valid even when signals are stale. Otherwise a total crash would deadlock — no replicas, so no metrics, so no action (D23).
+Staleness is detected from the recording-rule group's sample age (time() - timestamp(isa:waiting:sum)), not the query's evaluation time, which always looks fresh (D24).
 
 Replica lifecycle is an explicit state machine owned by the controller:
 
