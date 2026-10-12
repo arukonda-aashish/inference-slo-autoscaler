@@ -119,7 +119,32 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 25 },
       "datasource": { "type": "prometheus", "uid": "prom" },
       "targets": [
-        { "refId": "A", "expr": "router_inflight", "legendFormat": "{{replica}}" }
+         { "refId": "A", "expr": "router_inflight", "legendFormat": "{{replica}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Replicas by phase (controller)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 33 },
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [
+        { "refId": "A", "expr": "controller_replicas", "legendFormat": "{{phase}}" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "min": 0, "custom": { "stacking": { "mode": "normal" } } },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Controller: desired vs target",
+      "description": "desired: the policy's raw ask. target: what the stabilizer allowed.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 33 },
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [
+        { "refId": "A", "expr": "controller_desired_replicas", "legendFormat": "desired" },
+        { "refId": "B", "expr": "controller_target_replicas", "legendFormat": "target" }
       ],
       "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] }
     }

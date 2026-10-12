@@ -84,8 +84,9 @@ class Pool:
     def count(self, phase: Phase) -> int:
         return sum(r.phase is phase for r in self._active.values())
 
-    def create(self, now: float) -> ManagedReplica:
-        used = {r.port for r in self._active.values()}
+    def create(self, now: float, exclude_ports: frozenset[int] | None = None) -> ManagedReplica:
+        """exclude_ports: ports still held by processes that are shutting down."""
+        used = {r.port for r in self._active.values()} | (exclude_ports or frozenset())
         port = next((p for p in self._ports if p not in used), None)
         if port is None:
             raise RuntimeError(f"no free port in {self._ports.start}..{self._ports.stop - 1}")

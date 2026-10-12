@@ -7,8 +7,8 @@ Inference SLO Autoscaler: autoscaling LLM serving on queue-derived signals
 instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
 
 ## Current state
-- Last completed step: 10a — metrics source, lifecycle, mock backend, health, targets
-- Next step: 10b — control loop, decision log, controller API, router sync, CLI
+- Last completed step: 10b — controller runtime: loops, drain, decision log, API, router sync
+- Next step: 11 — experiment runner (one command per run) and decision-log analysis
 
 ## Decisions
 - D1: Custom controller with pluggable backends, not KEDA. RunPod pods are
@@ -80,6 +80,17 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
   Ctrl-C to the controller doesn't kill them mid-generation. The controller
   owns their shutdown and drains first. Orphan cleanup after a controller
   crash (discover()) is deferred.
+- D27: Controller runs two loops (tick 5s, supervise 1s) sharing the pool under
+  one asyncio lock. Warmup and terminate run as background tasks outside it.
+- D28: Drain completion is read from the replica's own /metrics (running +
+  waiting == 0) after a 2s router grace, not from Prometheus.
+- D29: A failed replica leaves the pool immediately, but its port is reserved
+  until the process exits, so a replacement can't collide on bind.
+- D30: Router takes replicas from exactly one source (static list or
+  controller). If the controller is unreachable, it keeps the last known set
+  (fail static), logging once per outage.
+- D31: Controller shutdown terminates every replica it started and clears the
+  targets file. Orphans exist only if the controller itself crashes (D26).
   
 
 ## Open questions
@@ -101,11 +112,26 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
   to max under light load (over-provisioning); at 99 it should never scale
   (SLO violations). Showing both demonstrates no threshold works.
 - target_concurrency (12) and mu_rps (9.4) are mock values; re-derive from E1.
+- Queues are sticky: requests already queued on r1 stayed there after r2/r3
+  became ready, so the backlog drained at r1's rate (~10/s) while the new
+  replicas only took new arrivals. Late binding (router-side queue; dispatch
+  only when a replica has room) would let late capacity share the backlog.
+  Candidate E7, built on the router's K_max admission mechanism.
+- For bursts shorter than T_cold, no reactive policy (predictive included) can
+  protect burst-phase TTFT. Compare against the real levers: late binding,
+  admission control, and headroom (min_replicas: 2).
 
 ## Measurements
 - Mock replica, placeholder config (sweep_preview, 30s steps, direct to r1):
   TTFT p95 0.10s @4, 0.16s @6, 0.13s @8, 0.83s @10, 1.9s @12, 10.2s @14 rps.
   Knee between 8 and 10 rps. Service rate mu ~9.4 rps/replica, from in-flight
   growth of ~4.6/s during the 14 rps step (growth = arrival - service).
+- First managed run (queue policy, burst_short, mock, 1 -> 3 replicas):
+  detection 6.4s + cold start 31.3s = 37.7s reaction vs a 30.6s burst; new
+  capacity arrived after the burst ended. TTFT p95 0.10s / 15.5s / 14.2s
+  (baseline / burst / recovery). Recovery p50 28ms: bimodal, because ~5.5% of
+  recovery arrivals landed on r1 before r2/r3 were ready. Peak in flight 191.
+  GPU util read ~97% from the 4 rps baseline on. r1's KV pinned at ~98%.
+  Scale-down: 90s window held, one replica at a time, each drain 2.5s.
 ## Budget
 RunPod credits: ~$14. GPU hours used: 0.

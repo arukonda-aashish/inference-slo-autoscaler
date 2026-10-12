@@ -62,7 +62,7 @@ Calibration. Parameters a, b, c, total KV blocks, and cold start duration are fi
 
 A FastAPI async reverse proxy and the single entry point for all traffic. Four responsibilities.
 
-Registry sync. Routes only to replicas in READY. Fed from static config (configs/router.yaml) until the controller exists; then it polls the controller's GET /replicas every second. If the controller is unreachable, it keeps its last known set (fail static) rather than dropping everything. On a connect failure, it retries a different replica, since nothing reached the first one (D10). It never retries mid-stream.
+Registry sync. Routes only to replicas in READY. Fed either from static config (configs/router.yaml) or by polling the controller's GET /replicas every second (configs/router_managed.yaml); exactly one source is allowed. If the controller is unreachable, it keeps its last known set (fail static) rather than dropping everything. On a connect failure, it retries a different replica, since nothing reached the first one (D10). It never retries mid-stream.
 
 Balancing. Least-outstanding-requests, using the router's own in-flight counter per replica. Round robin is wrong here: with a mixed prompt-length distribution, it piles long requests onto one replica while another sits light. The balancer choice is configurable so you can show the difference if you want.
 
@@ -173,7 +173,9 @@ FAILED	Health fails 3× or process exits	No	No (replaced)
 
 The warmup request before READY matters: the first request after load triggers CUDA graph capture and compilation, and you don't want a real user paying for it.
 
-Drain sequence for scale-down: pick the replica with the fewest in-flight requests, mark it DRAINING, wait for the router to drop it (≤1s poll interval), wait until its in-flight count reaches 0 or drain_timeout_s (120s) elapses, then SIGTERM, then SIGKILL after 10s. The ordering matters because vLLM aborts in-flight generations on SIGTERM. Signal before draining and you truncate responses.
+Drain sequence for scale-down: pick the READY replica with the fewest in-flight requests, mark it DRAINING, wait drain_router_grace_s (2s) so the router (polling every 1s) has dropped it, then wait until the replica's own /metrics reports zero running and waiting — or drain_timeout_s (120s) elapses — then SIGTERM, then SIGKILL after 10s. Drain completion is read from the replica, not Prometheus, which can be a scrape interval stale (D28). The ordering matters because vLLM aborts in-flight generations on SIGTERM. Signal before draining and you truncate responses.
+
+Runtime structure: two loops share the pool under one asyncio lock. tick (every 5s) observes, decides, and acts; supervise (every 1s) moves replicas through their lifecycle. Slow operations — warmup, terminate — run as background tasks outside the lock, so they can't stall decisions (D27). A failed replica leaves the pool immediately so a replacement can be scheduled, but its port stays reserved until its process exits (D29). On shutdown the controller terminates every replica it started (D31).
 
 Backends isolate the "how" of scaling:
 

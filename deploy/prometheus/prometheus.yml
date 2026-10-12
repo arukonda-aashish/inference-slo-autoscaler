@@ -12,9 +12,13 @@ scrape_configs:
     static_configs:
       - targets: ["127.0.0.1:8000"]
 
+  - job_name: controller
+    static_configs:
+      - targets: ["127.0.0.1:8100"]
+
   - job_name: replicas
-    # Replicas come and go on dynamic ports, so they're discovered from a file.
-    # Written by scripts/dev_mocks.sh for now, by the controller later.
+    # Replicas come and go on dynamic ports, so they're discovered from a file
+    # the controller writes (scripts/dev_mocks.sh writes it in static dev mode).
     file_sd_configs:
       - files: ["targets/replicas.json"]
         refresh_interval: 5s

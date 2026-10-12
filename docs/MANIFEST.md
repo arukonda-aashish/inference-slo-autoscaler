@@ -79,6 +79,16 @@
 | tests/test_lifecycle.py | Transitions, ids/ports, router view, targets file |
 | tests/test_metrics_source.py | Staleness cases, rule-name consistency |
 | tests/test_mock_backend.py | Real-process spawn, probe, warmup, terminate |
+| src/isa/controller/config.py | ControllerConfig |
+| src/isa/controller/decision_log.py | JSONL log: tick and lifecycle records |
+| src/isa/controller/runtime.py | Controller: tick + supervise loops, actuation, drain |
+| src/isa/controller/api.py | /replicas, /state, /health, /metrics |
+| src/isa/controller/__main__.py | CLI: python -m isa.controller --policy ... |
+| src/isa/router/sync.py | Router polls controller for its registry, fail static |
+| configs/controller.yaml | Controller timings, ports, mock backend settings |
+| configs/router_managed.yaml | Router config with the controller as replica source |
+| tests/test_router_sync.py | Registry polling and fail-static |
+| tests/test_controller_runtime.py | End-to-end: restore, crash replace, scale up, drain |
 
 ## Pinned dependencies
 isa v0.1.0

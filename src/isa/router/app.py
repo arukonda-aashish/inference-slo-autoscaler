@@ -5,10 +5,11 @@ it exactly once, however the request ends. Balancing, and later admission
 control, are only as accurate as that count.
 """
 
+import asyncio
 import json
 import time
 from collections.abc import Awaitable, Callable
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 import httpx
 from fastapi import FastAPI, Request
@@ -21,6 +22,7 @@ from isa.router.balancer import make_balancer
 from isa.router.config import RouterConfig
 from isa.router.metrics import RouterMetrics
 from isa.router.registry import Registry, Replica
+from isa.router.sync import poll_registry
 
 log = get_logger(__name__)
 
@@ -64,12 +66,25 @@ def create_app(cfg: RouterConfig, http_client: httpx.AsyncClient | None = None) 
         holder["client"] = http_client or httpx.AsyncClient(
             timeout=UPSTREAM_TIMEOUT, limits=UPSTREAM_LIMITS
         )
+        poller: asyncio.Task[None] | None = None
+        if cfg.controller_url:
+            poller = asyncio.create_task(
+                poll_registry(holder["client"], cfg.controller_url, registry, cfg.registry_poll_s)
+            )
         log.info(
-            "router_ready", port=cfg.port, balancer=cfg.balancer, replicas=len(cfg.replicas)
+            "router_ready",
+            port=cfg.port,
+            balancer=cfg.balancer,
+            replicas=len(cfg.replicas),
+            controller=cfg.controller_url,
         )
         try:
             yield
         finally:
+            if poller is not None:
+                poller.cancel()
+                with suppress(asyncio.CancelledError):
+                    await poller
             if owned:
                 await holder["client"].aclose()
 

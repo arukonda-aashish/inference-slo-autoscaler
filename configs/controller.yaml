@@ -1,0 +1,23 @@
+api_host: 127.0.0.1
+api_port: 8100
+prometheus_url: http://127.0.0.1:9090
+max_signal_age_s: 10
+tick_s: 5
+health_interval_s: 1
+health_fail_threshold: 3
+startup_timeout_s: 120
+drain_router_grace_s: 2
+drain_timeout_s: 120
+terminate_grace_s: 10
+port_base: 8001
+port_count: 16
+targets_path: deploy/prometheus/targets/replicas.json
+metrics_map: configs/metrics_map.yaml
+stabilizer: configs/stabilizer.yaml
+backend:
+  kind: mock
+  cold_start_s: 30
+  engine_config: configs/mock_engine.yaml
+  metrics_map: configs/metrics_map.yaml
+  model_name: Qwen/Qwen2.5-0.5B-Instruct
+  log_dir: logs
