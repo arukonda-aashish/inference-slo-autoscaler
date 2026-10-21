@@ -1,6 +1,7 @@
 """Open-loop runner: fires every arrival at its scheduled time, whatever the server is doing."""
 
 import asyncio
+import time
 from dataclasses import dataclass
 
 import httpx
@@ -39,6 +40,9 @@ async def preflight(client: httpx.AsyncClient, base_url: str, model: str) -> Non
 class RunStats:
     peak_inflight: int
     elapsed_s: float
+    # Wall-clock elapsed minus monotonic elapsed. Near zero normally; large if the
+    # host was suspended: on macOS perf_counter stops during sleep, the wall clock doesn't.
+    clock_drift_s: float
 
 
 async def run(
@@ -147,4 +151,10 @@ async def run(
         if owned:
             await client.aclose()
 
-    return RunStats(peak_inflight=state["peak"], elapsed_s=clock.mono() - clock.mono0)
+    mono_elapsed = clock.mono() - clock.mono0
+    wall_elapsed = time.time() - clock.wall0
+    return RunStats(
+        peak_inflight=state["peak"],
+        elapsed_s=mono_elapsed,
+        clock_drift_s=wall_elapsed - mono_elapsed,
+    )

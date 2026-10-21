@@ -208,3 +208,25 @@ async def test_metrics_endpoint():
         assert "router_ttft_seconds_count 1.0" in text
         assert 'router_inflight{replica="r1"} 0.0' in text
         assert 'router_replica_ready{replica="r1"} 1.0' in text
+
+class WriteTimeout(httpx.AsyncBaseTransport):
+    """A replica connection that times out after the request may have been sent."""
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        raise httpx.WriteTimeout("timed out", request=request)
+
+
+async def test_upstream_timeout_is_502_not_500():
+    # Origin: one bare 500 when a laptop woke from sleep mid-run.
+    upstream = httpx.AsyncClient(mounts={"http://w1": WriteTimeout()})
+    router = create_router_app(
+        RouterConfig(replicas=[ReplicaSpec(replica_id="w1", url="http://w1")]),
+        http_client=upstream,
+    )
+    transport = httpx.ASGITransport(app=router)
+    async with upstream, router.router.lifespan_context(router):
+        async with httpx.AsyncClient(transport=transport, base_url="http://router") as client:
+            r = await client.post("/v1/completions", json=body())
+    assert r.status_code == 502
+    assert "WriteTimeout" in r.json()["message"]
+    assert total_inflight(router) == 0

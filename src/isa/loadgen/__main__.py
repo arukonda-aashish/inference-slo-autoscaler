@@ -57,7 +57,13 @@ def main() -> int:
     finally:
         recorder.close()
 
-    summary = summarize(recorder.records, profile.name, stats.peak_inflight, args.max_connections)
+    summary = summarize(
+        recorder.records,
+        profile.name,
+        stats.peak_inflight,
+        args.max_connections,
+        clock_drift_s=stats.clock_drift_s,
+    )
     summary_path = out.with_suffix(".summary.json")
     write_summary(summary_path, summary)
 

@@ -261,3 +261,10 @@ def test_summary_flags_no_successes():
     s = summarize(records, "p", peak_inflight=1, max_connections=100)
     assert not s.valid
     assert "no request succeeded" in s.invalid_reasons[0]
+
+def test_summary_flags_host_suspension():
+    # Origin: a batch run where the Mac slept ~392s mid-run. Dispatch lag looked
+    # perfect because the monotonic clock stopped too; only the wall clock knew.
+    s = summarize([rec(i) for i in range(10)], "p", 5, 100, clock_drift_s=392.0)
+    assert not s.valid
+    assert "suspended" in s.invalid_reasons[0]

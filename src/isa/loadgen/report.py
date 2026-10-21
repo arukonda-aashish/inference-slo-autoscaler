@@ -14,6 +14,11 @@ from isa.loadgen.client import RequestRecord
 LAG_P99_LIMIT_S = 0.050
 MAX_ERROR_RATE = 0.01
 
+# Wall and monotonic clocks diverging by more than this means the host was
+# suspended mid-run (e.g. laptop sleep). Dispatch-lag checks can't see that:
+# the monotonic clock stops with everything else.
+MAX_CLOCK_DRIFT_S = 1.0
+
 
 def _is_error(r: RequestRecord) -> bool:
     if r.status in (-1, 429):  # cancellations are counted separately
@@ -72,13 +77,18 @@ class Summary:
     lag_max_s: float | None
     peak_inflight: int
     max_connections: int
+    clock_drift_s: float
     cancelled: int
     valid: bool
     invalid_reasons: list[str] = field(default_factory=list)
 
 
 def summarize(
-    records: list[RequestRecord], profile: str, peak_inflight: int, max_connections: int
+    records: list[RequestRecord],
+    profile: str,
+    peak_inflight: int,
+    max_connections: int,
+    clock_drift_s: float = 0.0,
 ) -> Summary:
     by_status = Counter(str(r.status) for r in records)
     ttfts = [t for r in records if (t := _ttft(r)) is not None]
@@ -121,6 +131,11 @@ def summarize(
         reasons.append(
             f"{cancelled} requests still in flight at drain timeout: the latency tail is censored"
         )
+    if abs(clock_drift_s) > MAX_CLOCK_DRIFT_S:
+        reasons.append(
+            f"wall and monotonic clocks diverged by {clock_drift_s:.1f}s: the host was "
+            "suspended mid-run (sleep?), so timings no longer line up with Prometheus"
+        )
 
     return Summary(
         profile=profile,
@@ -137,6 +152,7 @@ def summarize(
         lag_max_s=max(lags, default=None),
         peak_inflight=peak_inflight,
         max_connections=max_connections,
+        clock_drift_s=clock_drift_s,
         cancelled=cancelled,
         valid=not reasons,
         invalid_reasons=reasons,

@@ -155,6 +155,15 @@ def create_app(cfg: RouterConfig, http_client: httpx.AsyncClient | None = None) 
             except httpx.PoolTimeout:
                 replica.inflight -= 1
                 return error(503, "router connection pool exhausted")
+            except httpx.HTTPError as e:
+                # Anything else (e.g. a write timeout) may come after the request
+                # reached the replica: unsafe to retry, but never a bare 500.
+                replica.inflight -= 1
+                metrics.upstream_errors.labels(replica=replica.replica_id).inc()
+                log.warning(
+                    "upstream_request_failed", replica_id=replica.replica_id, error=repr(e)
+                )
+                return error(502, f"upstream request failed: {type(e).__name__}")
             except BaseException:
                 # Includes CancelledError if the client disconnects mid-connect.
                 replica.inflight -= 1
