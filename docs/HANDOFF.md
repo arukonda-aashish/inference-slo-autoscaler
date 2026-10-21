@@ -7,8 +7,8 @@ Inference SLO Autoscaler: autoscaling LLM serving on queue-derived signals
 instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
 
 ## Current state
-- Last completed step: 10b — controller runtime: loops, drain, decision log, API, router sync
-- Next step: 11 — experiment runner (one command per run) and decision-log analysis
+- Last completed step: 11a — experiment runner
+- Next step: 11b — analysis: per-run timeline and report, cross-run comparison incl. cost
 
 ## Decisions
 - D1: Custom controller with pluggable backends, not KEDA. RunPod pods are
@@ -91,6 +91,16 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
   (fail static), logging once per outage.
 - D31: Controller shutdown terminates every replica it started and clears the
   targets file. Orphans exist only if the controller itself crashes (D26).
+- D32: The runner is a package module (python -m isa.experiment), not a
+  script, so it's importable and its pieces are unit-tested.
+- D33: Phase timing is derived from the load generator's JSON run_started log
+  event plus the profile's durations; no new timestamp plumbing. Raw logs
+  stay gitignored; run.json records everything the analysis needs.
+- D34: A run is valid only if loadgen exited 0, no replica port is bound after
+  teardown, and every Prometheus export succeeded. Preconditions (Prometheus
+  up, ports free) are checked before anything starts.
+- D35: Each run records the git SHA and a dirty flag. Commit before runs you
+  intend to keep.
   
 
 ## Open questions

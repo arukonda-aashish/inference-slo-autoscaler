@@ -1,0 +1,9 @@
+{
+  "experiment": "e2_util99_burst",
+  "description": "HPA-on-GPU-util at 99%. Expected never to scale up.",
+  "created_at": 1792607712.1418428,
+  "host": "ARUKONDAs-MacBook-Air.local",
+  "python": "3.12.12",
+  "git_sha": "4f4808a1089b4099bee7e01a6926d1dec6b16fa3",
+  "git_dirty": false
+}

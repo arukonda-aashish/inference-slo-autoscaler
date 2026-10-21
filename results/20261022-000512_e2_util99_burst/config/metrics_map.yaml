@@ -1,0 +1,9 @@
+# vLLM metric names. vLLM renames these across releases, so nothing in the
+# code hardcodes them. The mock replica emits whatever names are listed here.
+# Verify against a real /metrics in Phase 5 and record the version.
+vllm_version: "unverified"
+waiting: "vllm:num_requests_waiting"
+running: "vllm:num_requests_running"
+kv_usage: "vllm:kv_cache_usage_perc"
+ttft_hist: "vllm:time_to_first_token_seconds"
+tpot_hist: "vllm:time_per_output_token_seconds"

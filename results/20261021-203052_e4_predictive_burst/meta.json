@@ -1,0 +1,9 @@
+{
+  "experiment": "e4_predictive_burst",
+  "description": "Arrival-capacity + projected-queue policy against the same burst.",
+  "created_at": 1792594852.178775,
+  "host": "ARUKONDAs-MacBook-Air.local",
+  "python": "3.12.12",
+  "git_sha": "22778e11bd7a5a926ea3a7aeca4632a7ae4fe6ca",
+  "git_dirty": false
+}

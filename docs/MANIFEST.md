@@ -89,6 +89,14 @@
 | configs/router_managed.yaml | Router config with the controller as replica source |
 | tests/test_router_sync.py | Registry polling and fail-static |
 | tests/test_controller_runtime.py | End-to-end: restore, crash replace, scale up, drain |
+| configs/policies/util_99.yaml | HPA baseline at a 99% target (never scales) |
+| configs/experiments/*.yaml | E2 (util 80/99), E3 (queue), E4 (predictive) vs burst_short |
+| src/isa/experiment/config.py | ExperimentConfig |
+| src/isa/experiment/procs.py | Child process start/stop, port checks |
+| src/isa/experiment/prom_export.py | Prometheus range exports to long-format CSV |
+| src/isa/experiment/runner.py | One run end to end into results/<stamp>_<name>/ |
+| src/isa/experiment/__main__.py | CLI: python -m isa.experiment <config> |
+| tests/test_experiment.py | Configs, ports, export format, phase timing |
 
 ## Pinned dependencies
 isa v0.1.0
