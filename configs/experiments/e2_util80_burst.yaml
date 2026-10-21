@@ -1,0 +1,4 @@
+name: e2_util80_burst
+description: HPA-on-GPU-util at 80%. Expected to over-provision under any load.
+policy: configs/policies/util.yaml
+profile: configs/profiles/burst_short.yaml

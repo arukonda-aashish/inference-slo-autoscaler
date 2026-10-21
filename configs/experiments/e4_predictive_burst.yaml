@@ -1,0 +1,4 @@
+name: e4_predictive_burst
+description: Arrival-capacity + projected-queue policy against the same burst.
+policy: configs/policies/predictive.yaml
+profile: configs/profiles/burst_short.yaml

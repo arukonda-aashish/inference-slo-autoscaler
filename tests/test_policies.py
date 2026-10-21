@@ -39,7 +39,8 @@ PREDICTIVE = PredictivePolicy(
 def test_repo_configs_load():
     for path in sorted((CONFIGS / "policies").glob("*.yaml")):
         policy = make_policy(load_yaml(path, PolicyFile).policy)
-        assert policy.name == path.stem
+        # util.yaml, or a variant of it such as util_99.yaml
+        assert path.stem == policy.name or path.stem.startswith(f"{policy.name}_")
     load_yaml(CONFIGS / "stabilizer.yaml", StabilizerConfig)
 
 
