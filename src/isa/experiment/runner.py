@@ -77,7 +77,7 @@ def git_meta() -> dict[str, Any]:
             return None
         return out.stdout.strip()
 
-    status = git("status", "--porcelain")
+    status = git("status", "--porcelain", "--", ".", ":(exclude)results")
     return {"git_sha": git("rev-parse", "HEAD"), "git_dirty": None if status is None else bool(status)}
 
 
