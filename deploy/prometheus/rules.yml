@@ -7,8 +7,11 @@ groups:
     interval: 2s
     rules:
       # ---- replica state ----
+            # Waiting anywhere: in replica queues, plus the router's queue when late
+      # binding holds requests there. `or vector(0)` keeps it defined when the
+      # router isn't scraped; with no replicas it's still empty (-> stale), as before.
       - record: isa:waiting:sum
-        expr: sum(vllm:num_requests_waiting)
+        expr: sum(vllm:num_requests_waiting) + (sum(router_queue_depth) or vector(0))
       - record: isa:running:sum
         expr: sum(vllm:num_requests_running)
       # Worst replica, not the mean: one replica at 98% is about to preempt

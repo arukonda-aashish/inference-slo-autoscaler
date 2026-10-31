@@ -60,6 +60,7 @@ class PhaseMetrics:
     rate_rps: float
     requests: int
     ok: int
+    shed: int  # 429s: rejected by admission control
     ttft_p50_s: float | None
     ttft_p95_s: float | None
     ttft_p99_s: float | None
@@ -104,6 +105,7 @@ def phase_metrics(run: Run) -> list[PhaseMetrics]:
                 rate_rps=w["rate_rps"],
                 requests=len(rs),
                 ok=sum(r.ok for r in rs),
+                shed=sum(r.status == 429 for r in rs),
                 ttft_p50_s=percentile(ttfts, 50),
                 ttft_p95_s=percentile(ttfts, 95),
                 ttft_p99_s=percentile(ttfts, 99),

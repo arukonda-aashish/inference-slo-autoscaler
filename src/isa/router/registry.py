@@ -7,7 +7,7 @@ The registry is fed by update(): from static config for now, and later by
 polling the controller, which owns replica lifecycle.
 """
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -40,6 +40,9 @@ class Replica:
 class Registry:
     def __init__(self) -> None:
         self._replicas: dict[str, Replica] = {}
+        # Called after every update(): a replica that just became READY may be
+        # able to take queued requests immediately (late binding).
+        self.listeners: list[Callable[[], None]] = []
 
     def all(self) -> list[Replica]:
         return list(self._replicas.values())
@@ -80,3 +83,5 @@ class Registry:
         for replica_id in [rid for rid in self._replicas if rid not in seen]:
             removed = self._replicas.pop(replica_id)
             log.info("replica_removed", replica_id=replica_id, inflight=removed.inflight)
+        for listener in self.listeners:
+            listener()

@@ -1,8 +1,9 @@
 """Router: the single entry point. Balances across READY replicas and relays responses.
 
-Invariant: every request that increments a replica's in-flight count decrements
-it exactly once, however the request ends. Balancing, and later admission
-control, are only as accurate as that count.
+Invariant: every request that takes a replica slot gives it back exactly once,
+however it ends. Slots are taken inside Admission (acquire, or pump for queued
+requests) and returned through admission.release, which also hands the slot to
+the next queued request when late binding is on.
 """
 
 import asyncio
@@ -18,6 +19,7 @@ from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from starlette.types import Receive, Scope, Send
 
 from isa.common.log import get_logger
+from isa.router.admission import Admission, Rejected
 from isa.router.balancer import make_balancer
 from isa.router.config import RouterConfig
 from isa.router.metrics import RouterMetrics
@@ -56,8 +58,18 @@ def create_app(cfg: RouterConfig, http_client: httpx.AsyncClient | None = None) 
     """http_client is injectable so tests can route upstream calls to in-process apps."""
     registry = Registry()
     registry.update(cfg.replicas)
-    balancer = make_balancer(cfg.balancer)
-    metrics = RouterMetrics(registry)
+    adm = cfg.admission
+    admission = Admission(
+        registry,
+        make_balancer(cfg.balancer),
+        # Disabled: no per-replica cap and no queue, i.e. route-on-arrival, the
+        # original behavior, through the same code path.
+        max_inflight=adm.max_inflight_per_replica if adm.enabled else None,
+        max_queue=adm.max_queue if adm.enabled else 0,
+        max_wait_s=adm.max_queue_wait_s if adm.enabled else None,
+    )
+    registry.listeners.append(admission.pump)
+    metrics = RouterMetrics(registry, queue_depth=lambda: admission.depth)
     holder: dict[str, httpx.AsyncClient] = {}
 
     @asynccontextmanager
@@ -77,6 +89,7 @@ def create_app(cfg: RouterConfig, http_client: httpx.AsyncClient | None = None) 
             balancer=cfg.balancer,
             replicas=len(cfg.replicas),
             controller=cfg.controller_url,
+            late_binding=adm.enabled,
         )
         try:
             yield
@@ -91,11 +104,12 @@ def create_app(cfg: RouterConfig, http_client: httpx.AsyncClient | None = None) 
     app = FastAPI(lifespan=lifespan)
     app.state.registry = registry
 
-    def error(status: int, message: str) -> JSONResponse:
+    def error(status: int, message: str, headers: dict[str, str] | None = None) -> JSONResponse:
         metrics.requests.labels(code=str(status)).inc()
         return JSONResponse(
             status_code=status,
             content={"object": "error", "message": message, "type": "RouterError", "code": status},
+            headers=headers,
         )
 
     @app.get("/health")
@@ -131,13 +145,21 @@ def create_app(cfg: RouterConfig, http_client: httpx.AsyncClient | None = None) 
         client = holder["client"]
         tried: set[str] = set()
         for _ in range(cfg.connect_attempts):
-            candidates = [r for r in registry.ready() if r.replica_id not in tried]
-            replica = balancer.pick(candidates)
-            if replica is None:
-                break
+            try:
+                # The first attempt may wait in the queue (late binding). A retry
+                # after a connect failure never queues: another replica now, or give up.
+                replica = await admission.acquire(frozenset(tried), queue=not tried)
+            except Rejected as e:
+                if tried:
+                    break
+                if not adm.enabled:
+                    return error(503, "no ready replicas")
+                metrics.rejected.labels(reason=e.reason).inc()
+                return error(429, f"rejected: {e.reason}", headers={"retry-after": "1"})
+            if not tried:
+                metrics.queue_wait.observe(time.perf_counter() - t0)
             tried.add(replica.replica_id)
 
-            replica.inflight += 1
             upstream_req = client.build_request(
                 "POST",
                 f"{replica.url}/v1/completions",
@@ -148,17 +170,17 @@ def create_app(cfg: RouterConfig, http_client: httpx.AsyncClient | None = None) 
                 upstream = await client.send(upstream_req, stream=True)
             except (httpx.ConnectError, httpx.ConnectTimeout) as e:
                 # Nothing reached the replica, so trying another is safe.
-                replica.inflight -= 1
+                admission.release(replica)
                 metrics.upstream_errors.labels(replica=replica.replica_id).inc()
                 log.warning("upstream_connect_failed", replica_id=replica.replica_id, error=repr(e))
                 continue
             except httpx.PoolTimeout:
-                replica.inflight -= 1
+                admission.release(replica)
                 return error(503, "router connection pool exhausted")
             except httpx.HTTPError as e:
                 # Anything else (e.g. a write timeout) may come after the request
                 # reached the replica: unsafe to retry, but never a bare 500.
-                replica.inflight -= 1
+                admission.release(replica)
                 metrics.upstream_errors.labels(replica=replica.replica_id).inc()
                 log.warning(
                     "upstream_request_failed", replica_id=replica.replica_id, error=repr(e)
@@ -166,14 +188,12 @@ def create_app(cfg: RouterConfig, http_client: httpx.AsyncClient | None = None) 
                 return error(502, f"upstream request failed: {type(e).__name__}")
             except BaseException:
                 # Includes CancelledError if the client disconnects mid-connect.
-                replica.inflight -= 1
+                admission.release(replica)
                 raise
 
             log.debug("request_routed", replica_id=replica.replica_id, stream=stream)
             return await relay(upstream, replica, stream, t0)
 
-        if not tried:
-            return error(503, "no ready replicas")
         return error(502, f"could not connect to any replica (tried {len(tried)})")
 
     async def relay(
@@ -193,7 +213,7 @@ def create_app(cfg: RouterConfig, http_client: httpx.AsyncClient | None = None) 
                 log.warning("upstream_read_failed", replica_id=replica.replica_id, error=repr(e))
                 return error(502, "upstream failed mid-response")
             finally:
-                replica.inflight -= 1  # before the await, so cancellation can't skip it
+                admission.release(replica)  # before the await, so cancellation can't skip it
                 await upstream.aclose()
             metrics.requests.labels(code=str(status)).inc()
             return Response(content, status_code=status, media_type=media_type, headers=headers)
@@ -221,7 +241,7 @@ def create_app(cfg: RouterConfig, http_client: httpx.AsyncClient | None = None) 
             if closed:
                 return
             closed = True
-            replica.inflight -= 1  # before the await, so cancellation can't skip it
+            admission.release(replica)  # before the await, so cancellation can't skip it
             if not completed:
                 log.debug("stream_closed_early", replica_id=replica.replica_id)
             # Closing the upstream connection is what tells the replica the client

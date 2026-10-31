@@ -1,0 +1,6 @@
+# Same as stabilizer.yaml, with two replicas as a standing floor.
+min_replicas: 2
+max_replicas: 3
+max_step_up: 2
+up_cooldown_s: 30
+down_window_s: 90
