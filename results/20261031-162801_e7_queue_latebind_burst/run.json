@@ -1,0 +1,35 @@
+{
+  "experiment": "e7_queue_latebind_burst",
+  "started_at": 1793444281.9739342,
+  "ready_after_s": 31.63,
+  "loadgen_exit": 0,
+  "load_started_at": 1793444328.861219,
+  "phases": [
+    {
+      "phase": 0,
+      "rate_rps": 4.0,
+      "start": 1793444328.861219,
+      "end": 1793444388.861219
+    },
+    {
+      "phase": 1,
+      "rate_rps": 16.0,
+      "start": 1793444388.861219,
+      "end": 1793444418.861219
+    },
+    {
+      "phase": 2,
+      "rate_rps": 4.0,
+      "start": 1793444418.861219,
+      "end": 1793444538.861219
+    }
+  ],
+  "ended_at": 1793444690.802088,
+  "export_errors": [],
+  "exit_codes": {
+    "router": 0,
+    "controller": 0
+  },
+  "orphan_ports": [],
+  "valid": true
+}

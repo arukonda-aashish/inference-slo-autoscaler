@@ -1,0 +1,9 @@
+{
+  "experiment": "e8_queue_min2_burst",
+  "description": "Queue policy with a standing floor of 2 replicas (deliberate headroom).",
+  "created_at": 1793442643.8587918,
+  "host": "ARUKONDAs-MacBook-Air.local",
+  "python": "3.12.12",
+  "git_sha": "c5abdf1e0bcf4685636d908ebf74c280ee6992d0",
+  "git_dirty": false
+}

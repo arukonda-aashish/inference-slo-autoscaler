@@ -1,0 +1,11 @@
+host: 127.0.0.1
+port: 8000
+balancer: least_outstanding
+connect_attempts: 2
+controller_url: http://127.0.0.1:8100
+registry_poll_s: 1.0
+# Late binding: requests wait here, not in a replica's queue, until some READY
+# replica has a free slot. 24 is just under the mock's KV-limited concurrency (~29).
+admission:
+  enabled: true
+  max_inflight_per_replica: 24

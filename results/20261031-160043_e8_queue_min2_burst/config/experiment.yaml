@@ -1,0 +1,5 @@
+name: e8_queue_min2_burst
+description: Queue policy with a standing floor of 2 replicas (deliberate headroom).
+policy: configs/policies/queue.yaml
+profile: configs/profiles/burst_short.yaml
+controller: configs/controller_min2.yaml

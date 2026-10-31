@@ -97,6 +97,13 @@
 | src/isa/experiment/runner.py | One run end to end into results/<stamp>_<name>/ |
 | src/isa/experiment/__main__.py | CLI: python -m isa.experiment <config> |
 | tests/test_experiment.py | Configs, ports, export format, phase timing |
+| src/isa/analysis/load.py | Loads a run directory |
+| src/isa/analysis/metrics.py | Phase latency, burst reaction, replica-seconds |
+| src/isa/analysis/timeline.py | Per-run timeline chart |
+| src/isa/analysis/report.py | Per-run report.md, cross-run comparison |
+| src/isa/analysis/__main__.py | CLI: python -m isa.analysis report|compare |
+| tests/test_analysis.py | Synthetic-run tests for every metric |
+| results/comparison.md | Current cross-run comparison table |
 
 ## Pinned dependencies
 isa v0.1.0

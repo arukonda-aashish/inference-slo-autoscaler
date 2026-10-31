@@ -1,0 +1,12 @@
+host: 127.0.0.1
+port: 8000
+balancer: least_outstanding
+connect_attempts: 2
+controller_url: http://127.0.0.1:8100
+registry_poll_s: 1.0
+# Late binding plus shedding: a request that has already waited 1.5s will miss
+# the 2s TTFT SLO anyway, so reject it (429) rather than delay those behind it.
+admission:
+  enabled: true
+  max_inflight_per_replica: 24
+  max_queue_wait_s: 1.5

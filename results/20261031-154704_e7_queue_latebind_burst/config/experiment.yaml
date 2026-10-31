@@ -1,0 +1,5 @@
+name: e7_queue_latebind_burst
+description: Queue policy with late binding in the router (no shedding).
+policy: configs/policies/queue.yaml
+profile: configs/profiles/burst_short.yaml
+router: configs/router_latebind.yaml

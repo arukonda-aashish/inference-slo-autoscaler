@@ -7,8 +7,8 @@ Inference SLO Autoscaler: autoscaling LLM serving on queue-derived signals
 instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
 
 ## Current state
-- Last completed step: 11a — experiment runner
-- Next step: 11b — analysis: per-run timeline and report, cross-run comparison incl. cost
+- Last completed step: 12 — late binding + admission control; E5, E7, E8 on the mock
+- Next step: 13 — GPU session: vLLM backend, E0/E1 on real hardware, one burst run
 
 ## Decisions
 - D1: Custom controller with pluggable backends, not KEDA. RunPod pods are
@@ -101,6 +101,21 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
   up, ports free) are checked before anything starts.
 - D35: Each run records the git SHA and a dirty flag. Commit before runs you
   intend to keep.
+- D36: Cost is replica-seconds over the load window, counting starting and
+  draining replicas: a process costs GPU memory and money from launch.
+- D37: within_slo divides by all requests, so failures count as misses.
+  Shedding is never free in this metric.
+- D38: Comparisons group repeats by experiment and report median [min–max].
+  Origin: e3 scaled during the baseline in one run but not another with the
+  same arrivals, because its threshold sat at the baseline's natural level.
+- D39: Batches run under `caffeinate -i`. Origin: a run where the Mac slept
+  ~392s mid-load; the loadgen now also flags clock drift > 1s as invalid.
+- D40: Late binding: the router keeps one FIFO queue and dispatches only when a
+  READY replica has a free slot (max_inflight_per_replica). Admission control
+  uses the same queue (429 queue_full / queue_timeout). Disabled by default,
+  and when disabled it's route-on-arrival through the same code path.
+- D41: isa:waiting:sum includes router_queue_depth, so the controller sees a
+  backlog wherever it sits.
   
 
 ## Open questions
@@ -160,5 +175,14 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
   burst ended. No reactive policy reliably protects a burst shorter than T_cold.
 - Rounds 2-3 were flagged git_dirty: only analysis code, pyproject/uv.lock, and
   docs were uncommitted; runtime code identical to 4f4808a (checked with git diff).
+- E5/E7/E8 on the mock, 3 runs each (results/comparison.md):
+    E8 queue + min_replicas 2: burst p95 145-173ms, 100% within SLO, ~535 replica-s
+      (util80 matched the latency only by over-provisioning, at ~590)
+    E5 late binding + shed at 1.5s: worst burst p95 1.49s (vs 13-15.6s for
+      E3/E4/E7 worst runs), shed 0-6%, ~480 replica-s. 2 of 3 runs pre-scaled.
+    E7 late binding alone: recovery p95 14.3s -> 6.4s (backlog shared);
+      burst p95 15.6s -> 13.4s only: capacity still arrives late.
+  Conclusion: for bursts shorter than T_cold, signal choice doesn't protect the
+  SLO; headroom does, admission bounds the worst case, late binding enables both.
 ## Budget
 RunPod credits: ~$14. GPU hours used: 0.

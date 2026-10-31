@@ -1,0 +1,9 @@
+{
+  "experiment": "e7_queue_latebind_burst",
+  "description": "Queue policy with late binding in the router (no shedding).",
+  "created_at": 1793443053.136908,
+  "host": "ARUKONDAs-MacBook-Air.local",
+  "python": "3.12.12",
+  "git_sha": "c5abdf1e0bcf4685636d908ebf74c280ee6992d0",
+  "git_dirty": false
+}
