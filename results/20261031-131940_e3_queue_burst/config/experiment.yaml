@@ -1,0 +1,4 @@
+name: e3_queue_burst
+description: Concurrency-target policy against a 30s burst, starting from 1 replica.
+policy: configs/policies/queue.yaml
+profile: configs/profiles/burst_short.yaml

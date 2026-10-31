@@ -1,0 +1,7 @@
+# The same HPA baseline at a 99% target: the other horn of "no threshold works".
+# GPU util reads ~97% under any load, which sits inside the tolerance band
+# around 99, so this policy should never scale up.
+policy:
+  kind: util
+  target_util_percent: 99
+  tolerance: 0.1

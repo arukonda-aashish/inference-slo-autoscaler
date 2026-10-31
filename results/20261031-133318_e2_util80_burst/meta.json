@@ -1,0 +1,9 @@
+{
+  "experiment": "e2_util80_burst",
+  "description": "HPA-on-GPU-util at 80%. Expected to over-provision under any load.",
+  "created_at": 1793433798.786529,
+  "host": "ARUKONDAs-MacBook-Air.local",
+  "python": "3.12.12",
+  "git_sha": "9fe9b9614353b7bcf2cbf98a89ba68b87b7b94f6",
+  "git_dirty": true
+}

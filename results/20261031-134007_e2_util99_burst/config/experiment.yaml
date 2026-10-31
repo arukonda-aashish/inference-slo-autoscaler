@@ -1,0 +1,4 @@
+name: e2_util99_burst
+description: HPA-on-GPU-util at 99%. Expected never to scale up.
+policy: configs/policies/util_99.yaml
+profile: configs/profiles/burst_short.yaml

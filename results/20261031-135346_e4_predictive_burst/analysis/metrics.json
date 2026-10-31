@@ -1,0 +1,52 @@
+{
+  "name": "e4_predictive_burst",
+  "policy": "predictive",
+  "run_dir": "results/20261031-135346_e4_predictive_burst",
+  "git_sha": "9fe9b9614353b7bcf2cbf98a89ba68b87b7b94f6",
+  "valid": true,
+  "phases": [
+    {
+      "phase": 0,
+      "rate_rps": 4.0,
+      "requests": 234,
+      "ok": 234,
+      "ttft_p50_s": 0.029387354850769043,
+      "ttft_p95_s": 0.10168087482452393,
+      "ttft_p99_s": 0.11702208995819081,
+      "within_slo": 1.0
+    },
+    {
+      "phase": 1,
+      "rate_rps": 16.0,
+      "requests": 494,
+      "ok": 494,
+      "ttft_p50_s": 6.380501389503479,
+      "ttft_p95_s": 15.600943636894225,
+      "ttft_p99_s": 16.757243733406067,
+      "within_slo": 0.19838056680161945
+    },
+    {
+      "phase": 2,
+      "rate_rps": 4.0,
+      "requests": 509,
+      "ok": 509,
+      "ttft_p50_s": 0.027232885360717773,
+      "ttft_p95_s": 8.800245428085656,
+      "ttft_p99_s": 16.53097747802735,
+      "within_slo": 0.9489194499017681
+    }
+  ],
+  "burst": {
+    "phase": 1,
+    "duration_s": 30.0,
+    "ready_at_onset": 1,
+    "scale_ups_before_onset": 0,
+    "detection_s": 3.555173873901367,
+    "capacity_ready_s": 34.72561311721802,
+    "capacity_after_burst_s": 4.725613117218018
+  },
+  "replica_s_load": 493.7753610610962,
+  "peak_outstanding": 183.0,
+  "scale_ups": 2,
+  "scale_downs": 2
+}

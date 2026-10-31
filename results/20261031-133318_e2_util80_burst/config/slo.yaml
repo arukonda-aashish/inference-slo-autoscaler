@@ -1,0 +1,4 @@
+# The contract every experiment is judged against.
+ttft_p95_s: 2.0          # p95 time to first token
+tpot_p95_s: 0.08         # p95 time per output token (80 ms)
+min_admission_rate: 0.95 # at most 5% of offered requests shed

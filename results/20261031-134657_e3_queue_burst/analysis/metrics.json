@@ -1,0 +1,52 @@
+{
+  "name": "e3_queue_burst",
+  "policy": "queue",
+  "run_dir": "results/20261031-134657_e3_queue_burst",
+  "git_sha": "9fe9b9614353b7bcf2cbf98a89ba68b87b7b94f6",
+  "valid": true,
+  "phases": [
+    {
+      "phase": 0,
+      "rate_rps": 4.0,
+      "requests": 234,
+      "ok": 234,
+      "ttft_p50_s": 0.03024470806121826,
+      "ttft_p95_s": 0.10260647535324097,
+      "ttft_p99_s": 0.11357305526733395,
+      "within_slo": 1.0
+    },
+    {
+      "phase": 1,
+      "rate_rps": 16.0,
+      "requests": 494,
+      "ok": 494,
+      "ttft_p50_s": 6.3563737869262695,
+      "ttft_p95_s": 15.602267575263976,
+      "ttft_p99_s": 16.742747755050658,
+      "within_slo": 0.19635627530364372
+    },
+    {
+      "phase": 2,
+      "rate_rps": 4.0,
+      "requests": 509,
+      "ok": 509,
+      "ttft_p50_s": 0.02813434600830078,
+      "ttft_p95_s": 14.334049129486097,
+      "ttft_p99_s": 16.52951263427735,
+      "within_slo": 0.9194499017681729
+    }
+  ],
+  "burst": {
+    "phase": 1,
+    "duration_s": 30.0,
+    "ready_at_onset": 1,
+    "scale_ups_before_onset": 0,
+    "detection_s": 8.585381269454956,
+    "capacity_ready_s": 39.769747257232666,
+    "capacity_after_burst_s": 9.769747257232666
+  },
+  "replica_s_load": 489.7341420650482,
+  "peak_outstanding": 189.0,
+  "scale_ups": 2,
+  "scale_downs": 2
+}

@@ -1,0 +1,35 @@
+{
+  "experiment": "e3_queue_burst",
+  "started_at": 1793432980.240213,
+  "ready_after_s": 31.39,
+  "loadgen_exit": 0,
+  "load_started_at": 1793433026.904265,
+  "phases": [
+    {
+      "phase": 0,
+      "rate_rps": 4.0,
+      "start": 1793433026.904265,
+      "end": 1793433086.904265
+    },
+    {
+      "phase": 1,
+      "rate_rps": 16.0,
+      "start": 1793433086.904265,
+      "end": 1793433116.904265
+    },
+    {
+      "phase": 2,
+      "rate_rps": 4.0,
+      "start": 1793433116.904265,
+      "end": 1793433236.904265
+    }
+  ],
+  "ended_at": 1793433388.491036,
+  "export_errors": [],
+  "exit_codes": {
+    "router": 0,
+    "controller": 0
+  },
+  "orphan_ports": [],
+  "valid": true
+}

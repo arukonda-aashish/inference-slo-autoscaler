@@ -1,0 +1,35 @@
+{
+  "experiment": "e4_predictive_burst",
+  "started_at": 1793433389.581795,
+  "ready_after_s": 31.42,
+  "loadgen_exit": 0,
+  "load_started_at": 1793433436.203336,
+  "phases": [
+    {
+      "phase": 0,
+      "rate_rps": 4.0,
+      "start": 1793433436.203336,
+      "end": 1793433496.203336
+    },
+    {
+      "phase": 1,
+      "rate_rps": 16.0,
+      "start": 1793433496.203336,
+      "end": 1793433526.203336
+    },
+    {
+      "phase": 2,
+      "rate_rps": 4.0,
+      "start": 1793433526.203336,
+      "end": 1793433646.203336
+    }
+  ],
+  "ended_at": 1793433797.951054,
+  "export_errors": [],
+  "exit_codes": {
+    "router": 0,
+    "controller": 0
+  },
+  "orphan_ports": [],
+  "valid": true
+}

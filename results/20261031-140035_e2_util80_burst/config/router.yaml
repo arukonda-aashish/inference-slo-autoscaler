@@ -1,0 +1,7 @@
+host: 127.0.0.1
+port: 8000
+balancer: least_outstanding
+connect_attempts: 2
+# Replicas come from the controller, which owns their lifecycle.
+controller_url: http://127.0.0.1:8100
+registry_poll_s: 1.0

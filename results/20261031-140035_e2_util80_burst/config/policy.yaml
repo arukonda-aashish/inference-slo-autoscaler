@@ -1,0 +1,7 @@
+# Baseline: the Kubernetes HPA formula on GPU utilization, with HPA's default
+# 10% tolerance. E2 should also run target_util_percent: 99 to show that no
+# threshold works: at 80 it over-provisions, at 99 it never scales.
+policy:
+  kind: util
+  target_util_percent: 80
+  tolerance: 0.1

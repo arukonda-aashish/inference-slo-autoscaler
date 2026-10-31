@@ -1,0 +1,35 @@
+{
+  "experiment": "e2_util80_burst",
+  "started_at": 1793433798.7986538,
+  "ready_after_s": 31.41,
+  "loadgen_exit": 0,
+  "load_started_at": 1793433845.486993,
+  "phases": [
+    {
+      "phase": 0,
+      "rate_rps": 4.0,
+      "start": 1793433845.486993,
+      "end": 1793433905.486993
+    },
+    {
+      "phase": 1,
+      "rate_rps": 16.0,
+      "start": 1793433905.486993,
+      "end": 1793433935.486993
+    },
+    {
+      "phase": 2,
+      "rate_rps": 4.0,
+      "start": 1793433935.486993,
+      "end": 1793434055.486993
+    }
+  ],
+  "ended_at": 1793434206.993578,
+  "export_errors": [],
+  "exit_codes": {
+    "router": 0,
+    "controller": 0
+  },
+  "orphan_ports": [],
+  "valid": true
+}

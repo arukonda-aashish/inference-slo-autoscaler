@@ -1,0 +1,52 @@
+{
+  "name": "e2_util99_burst",
+  "policy": "util_99",
+  "run_dir": "results/20261031-134007_e2_util99_burst",
+  "git_sha": "9fe9b9614353b7bcf2cbf98a89ba68b87b7b94f6",
+  "valid": true,
+  "phases": [
+    {
+      "phase": 0,
+      "rate_rps": 4.0,
+      "requests": 234,
+      "ok": 234,
+      "ttft_p50_s": 0.029145479202270508,
+      "ttft_p95_s": 0.1015099048614502,
+      "ttft_p99_s": 0.1187500667572021,
+      "within_slo": 1.0
+    },
+    {
+      "phase": 1,
+      "rate_rps": 16.0,
+      "requests": 494,
+      "ok": 494,
+      "ttft_p50_s": 6.375614523887634,
+      "ttft_p95_s": 15.661049294471741,
+      "ttft_p99_s": 16.812673456668854,
+      "within_slo": 0.19635627530364372
+    },
+    {
+      "phase": 2,
+      "rate_rps": 4.0,
+      "requests": 509,
+      "ok": 509,
+      "ttft_p50_s": 0.04990696907043457,
+      "ttft_p95_s": 14.423794651031507,
+      "ttft_p99_s": 16.605196456909184,
+      "within_slo": 0.8113948919449901
+    }
+  ],
+  "burst": {
+    "phase": 1,
+    "duration_s": 30.0,
+    "ready_at_onset": 1,
+    "scale_ups_before_onset": 0,
+    "detection_s": null,
+    "capacity_ready_s": null,
+    "capacity_after_burst_s": null
+  },
+  "replica_s_load": 210.0,
+  "peak_outstanding": 186.0,
+  "scale_ups": 1,
+  "scale_downs": 0
+}

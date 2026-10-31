@@ -1,0 +1,11 @@
+# Placeholder values until calibration against real vLLM (Phase 6).
+# Deliberately KV-constrained so memory pressure shows up in local testing.
+block_size: 16
+num_kv_blocks: 2048          # 32k tokens of KV cache
+watermark_frac: 0.01         # free blocks kept in reserve at admission
+max_num_seqs: 64             # concurrent sequence slots
+max_batched_tokens: 2048     # per-step token budget (decode + prefill chunks)
+max_model_len: 4096          # max prompt + output tokens per request
+step_base_ms: 8.0            # fixed cost of one forward pass
+step_per_seq_ms: 0.15        # marginal cost per decoding sequence
+prefill_per_token_ms: 0.02   # marginal cost per prefill token

@@ -130,6 +130,13 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
 - For bursts shorter than T_cold, no reactive policy (predictive included) can
   protect burst-phase TTFT. Compare against the real levers: late binding,
   admission control, and headroom (min_replicas: 2).
+- Predictive's projected-queue term multiplies slope by t_cold (50s), which
+  amplifies baseline noise into scale-ups (+0.3/s slope -> +15 projected).
+  Candidates: smooth the slope (longer window), or require the capacity term
+  to agree before acting on slope alone.
+- Queue target 12 sits at the baseline's natural outstanding level (~8-13),
+  making the policy a coin flip. A fair comparison needs headroom runs
+  (min_replicas: 2) and hysteresis, not just a different threshold.
 
 ## Measurements
 - Mock replica, placeholder config (sweep_preview, 30s steps, direct to r1):
@@ -143,5 +150,15 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
   recovery arrivals landed on r1 before r2/r3 were ready. Peak in flight 191.
   GPU util read ~97% from the 4 rps baseline on. r1's KV pinned at ~98%.
   Scale-down: 90s window held, one replica at a time, each drain 2.5s.
+- Three rounds of E2-E4 on the mock, burst_short (comparison: results/comparison.md).
+  Burst TTFT p95, 3 runs each:
+    util99: 15.6-15.8s, cost 210 replica-s (never scales)
+    queue:  145ms / 15.6s / 15.6s, cost ~500 (1 of 3 pre-scaled in baseline)
+    predictive: 224ms / 2.4s / 15.6s, cost ~500 (1 of 3 pre-scaled)
+    util80: 116-119ms, cost ~590 (over-provisions during baseline)
+  Every run that scaled only after onset got capacity 4.7-9.8s after the
+  burst ended. No reactive policy reliably protects a burst shorter than T_cold.
+- Rounds 2-3 were flagged git_dirty: only analysis code, pyproject/uv.lock, and
+  docs were uncommitted; runtime code identical to 4f4808a (checked with git diff).
 ## Budget
 RunPod credits: ~$14. GPU hours used: 0.
