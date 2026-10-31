@@ -16,6 +16,10 @@ scrape_configs:
     static_configs:
       - targets: ["127.0.0.1:8100"]
 
+  - job_name: gpu  # pod only; harmlessly "down" on the Mac
+    static_configs:
+      - targets: ["127.0.0.1:9400"]
+
   - job_name: replicas
     # Replicas come and go on dynamic ports, so they're discovered from a file
     # the controller writes (scripts/dev_mocks.sh writes it in static dev mode).

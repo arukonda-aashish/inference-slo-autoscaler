@@ -2,6 +2,7 @@ from pydantic import Field
 
 from isa.common.config import StrictModel
 from isa.controller.backends.mock import MockBackendConfig
+from isa.controller.backends.vllm import VllmBackendConfig
 
 
 class ControllerConfig(StrictModel):
@@ -23,4 +24,6 @@ class ControllerConfig(StrictModel):
     targets_path: str = "deploy/prometheus/targets/replicas.json"
     metrics_map: str = "configs/metrics_map.yaml"
     stabilizer: str = "configs/stabilizer.yaml"
-    backend: MockBackendConfig = Field(default_factory=MockBackendConfig)
+    backend: MockBackendConfig | VllmBackendConfig = Field(
+        default_factory=MockBackendConfig, discriminator="kind"
+    )

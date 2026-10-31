@@ -1,0 +1,20 @@
+# E1 on real vLLM: 30s steps with 20s idle gaps, direct to one replica.
+name: sweep_gpu
+seed: 3
+phases:
+  - {duration_s: 30, rate_rps: 5}
+  - {duration_s: 20, rate_rps: 0}
+  - {duration_s: 30, rate_rps: 10}
+  - {duration_s: 20, rate_rps: 0}
+  - {duration_s: 30, rate_rps: 20}
+  - {duration_s: 20, rate_rps: 0}
+  - {duration_s: 30, rate_rps: 40}
+  - {duration_s: 20, rate_rps: 0}
+  - {duration_s: 30, rate_rps: 60}
+  - {duration_s: 20, rate_rps: 0}
+  - {duration_s: 30, rate_rps: 80}
+prompt_tokens:
+  mixture:
+    - {weight: 0.7, range: [100, 300]}
+    - {weight: 0.3, range: [2000, 3500]}
+max_tokens: {range: [64, 256]}

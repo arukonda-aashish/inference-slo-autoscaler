@@ -1,0 +1,6 @@
+# EDIT on the pod after E1: target_concurrency = steady in-flight requests at
+# the E1 step closest to 0.7 x mu (Little's law: L = lambda x W). Placeholder.
+policy:
+  kind: queue
+  target_concurrency: 40
+  kv_high: 0.9

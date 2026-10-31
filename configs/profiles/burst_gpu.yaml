@@ -1,0 +1,13 @@
+# EDIT on the pod after E1: baseline ~0.4 x mu, burst ~1.7 x mu (as burst_short
+# was set from the mock's mu). Placeholder values assume mu ~30 rps.
+name: burst_gpu
+seed: 42
+phases:
+  - {duration_s: 60, rate_rps: 12}
+  - {duration_s: 30, rate_rps: 50}
+  - {duration_s: 120, rate_rps: 12}
+prompt_tokens:
+  mixture:
+    - {weight: 0.7, range: [100, 300]}
+    - {weight: 0.3, range: [2000, 3500]}
+max_tokens: {range: [64, 256]}

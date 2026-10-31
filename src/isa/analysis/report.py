@@ -80,6 +80,16 @@ def _shed(m: RunMetrics) -> float | None:
         return None
     p = m.phases[m.burst.phase]
     return p.shed / p.requests if p.requests else None
+def _within(m: RunMetrics) -> float | None:
+    return m.phases[m.burst.phase].within_slo if m.burst else None
+
+
+def _ready(m: RunMetrics) -> float | None:
+    return float(m.burst.ready_at_onset) if m.burst else None
+
+
+def _count(x: float) -> str:
+    return f"{x:g}"
 def compare(metrics: list[RunMetrics]) -> str:
     valid = [m for m in metrics if m.valid]
     invalid = [m for m in metrics if not m.valid]
@@ -106,9 +116,9 @@ def compare(metrics: list[RunMetrics]) -> str:
             f"| {name} | {len(ms)} "
             f"| {_summary([phase_p95(m, 0) for m in ms], _s)} "
             f"| {_summary([phase_p95(m, 1) for m in ms], _s)} "
-            f"| {_summary([m.phases[m.burst.phase].within_slo if m.burst else None for m in ms], _pct)} "
+            f"| {_summary([_within(m) for m in ms], _pct)} "
             f"| {_summary([_shed(m) for m in ms], _pct)} "
-            f"| {_summary([float(m.burst.ready_at_onset) if m.burst else None for m in ms], lambda x: f'{x:g}')} "
+            f"| {_summary([_ready(m) for m in ms], _count)} "
             f"| {_summary([m.burst.capacity_after_burst_s if m.burst else None for m in ms], _s)} "
             f"| {_summary([m.replica_s_load for m in ms], lambda x: f'{x:.0f}')} |"
         )

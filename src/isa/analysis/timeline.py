@@ -28,7 +28,9 @@ def plot_timeline(run: Run, metrics: RunMetrics, steps: Steps, out) -> None:
     if pts:
         xs, ys = zip(*pts, strict=True)
         ax_ttft.scatter(xs, ys, s=4, alpha=0.5, label="TTFT per request")
-    ax_ttft.axhline(run.slo_ttft_s, color="tab:red", ls="--", lw=1, label=f"SLO {run.slo_ttft_s:g}s")
+    ax_ttft.axhline(
+        run.slo_ttft_s, color="tab:red", ls="--", lw=1, label=f"SLO {run.slo_ttft_s:g}s"
+    )
     ax_ttft.set_yscale("log")
     ax_ttft.set_ylabel("TTFT (s)")
     ax_ttft.legend(loc="upper right")
@@ -39,7 +41,8 @@ def plot_timeline(run: Run, metrics: RunMetrics, steps: Steps, out) -> None:
         ax_rep.step(sx, [c["ready"] for _, c in steps], where="post", label="ready")
         ax_rep.step(sx, [sum(c.values()) for _, c in steps], where="post", ls="--", label="live")
     tx = [t["t"] - t0 for t in run.ticks]
-    ax_rep.plot(tx, [t["decision"]["desired"] for t in run.ticks], alpha=0.4, label="desired (policy)")
+    desired = [t["decision"]["desired"] for t in run.ticks]
+    ax_rep.plot(tx, desired, alpha=0.4, label="desired (policy)")
     ax_rep.step(tx, [t["action"]["target"] for t in run.ticks], where="post", label="target")
     for t in run.ticks:
         delta = t["action"]["delta"]

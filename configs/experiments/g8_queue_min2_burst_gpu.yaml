@@ -1,0 +1,5 @@
+name: g8_queue_min2_burst_gpu
+description: E8 on real vLLM. Queue policy with a standing floor of 2 replicas.
+policy: configs/policies/queue_gpu.yaml
+profile: configs/profiles/burst_gpu.yaml
+controller: configs/controller_gpu_min2.yaml

@@ -10,7 +10,8 @@ import uvicorn
 from isa.common.config import MetricsMap, load_yaml
 from isa.common.log import get_logger, setup_logging
 from isa.controller.api import create_app
-from isa.controller.backends.mock import MockBackend
+from isa.controller.backends.mock import MockBackend, MockBackendConfig
+from isa.controller.backends.vllm import VllmBackend
 from isa.controller.config import ControllerConfig
 from isa.controller.decision_log import DecisionLog
 from isa.controller.metrics_source import MetricsSource
@@ -43,7 +44,11 @@ def main() -> None:
         cfg,
         policy=policy,
         stabilizer=Stabilizer(load_yaml(cfg.stabilizer, StabilizerConfig)),
-        backend=MockBackend(cfg.backend),
+        backend=(
+            MockBackend(cfg.backend)
+            if isinstance(cfg.backend, MockBackendConfig)
+            else VllmBackend(cfg.backend)
+        ),
         source=MetricsSource(cfg.prometheus_url, client, cfg.max_signal_age_s),
         names=load_yaml(cfg.metrics_map, MetricsMap),
         decision_log=DecisionLog(log_path),

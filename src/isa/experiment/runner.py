@@ -78,7 +78,8 @@ def git_meta() -> dict[str, Any]:
         return out.stdout.strip()
 
     status = git("status", "--porcelain", "--", ".", ":(exclude)results")
-    return {"git_sha": git("rev-parse", "HEAD"), "git_dirty": None if status is None else bool(status)}
+    dirty = None if status is None else bool(status)
+    return {"git_sha": git("rev-parse", "HEAD"), "git_dirty": dirty}
 
 
 def write_json(path: Path, obj: Any) -> None:
@@ -107,12 +108,16 @@ def phase_windows(profile: Profile, started_at: float) -> list[dict[str, float]]
     return windows
 
 
-def wait_ready(client: httpx.Client, router_url: str, timeout_s: float, children: list[Child]) -> float:
+def wait_ready(
+    client: httpx.Client, router_url: str, timeout_s: float, children: list[Child]
+) -> float:
     t0 = time.monotonic()
     while time.monotonic() - t0 < timeout_s:
         for c in children:
             if c.proc.poll() is not None:
-                raise RuntimeError(f"{c.name} exited with code {c.proc.returncode}; see {c.log_path}")
+                raise RuntimeError(
+                    f"{c.name} exited with code {c.proc.returncode}; see {c.log_path}"
+                )
         try:
             replicas = client.get(f"{router_url}/replicas").json()
             if any(r.get("state") == "ready" for r in replicas):
@@ -160,8 +165,12 @@ def run_experiment(exp_path: Path, results_root: Path = Path("results")) -> tupl
                 "router.yaml": exp.router,
                 "stabilizer.yaml": ctrl.stabilizer,
                 "slo.yaml": exp.slo,
-                "mock_engine.yaml": ctrl.backend.engine_config,
                 "metrics_map.yaml": ctrl.metrics_map,
+                **(
+                    {"mock_engine.yaml": ctrl.backend.engine_config}
+                    if ctrl.backend.kind == "mock"
+                    else {}
+                ),
             },
         )
         meta = {
