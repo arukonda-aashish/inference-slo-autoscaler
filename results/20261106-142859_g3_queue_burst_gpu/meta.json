@@ -1,0 +1,9 @@
+{
+  "experiment": "g3_queue_burst_gpu",
+  "description": "E3 on real vLLM (RTX A5000). Queue policy, burst sized from measured mu.",
+  "created_at": 1793975339.8330958,
+  "host": "539a89942e75",
+  "python": "3.12.3",
+  "git_sha": null,
+  "git_dirty": null
+}

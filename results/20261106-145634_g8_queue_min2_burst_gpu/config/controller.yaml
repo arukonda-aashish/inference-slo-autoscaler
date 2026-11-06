@@ -1,0 +1,24 @@
+# GPU pod, with a standing floor of 2 replicas (configs/stabilizer_min2.yaml).
+api_host: 127.0.0.1
+api_port: 8100
+prometheus_url: http://127.0.0.1:9090
+max_signal_age_s: 10
+tick_s: 5
+health_interval_s: 1
+health_fail_threshold: 3
+startup_timeout_s: 300
+drain_router_grace_s: 2
+drain_timeout_s: 120
+terminate_grace_s: 10
+port_base: 8201
+port_count: 16
+targets_path: deploy/prometheus/targets/replicas.json
+metrics_map: configs/metrics_map.yaml
+stabilizer: configs/stabilizer_min2.yaml
+backend:
+  kind: vllm
+  model_name: Qwen/Qwen2.5-0.5B-Instruct
+  gpu_memory_utilization: 0.28
+  max_model_len: 4096
+  extra_args: ["--no-enable-prefix-caching"]
+  log_dir: logs

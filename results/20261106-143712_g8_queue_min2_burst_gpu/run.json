@@ -1,0 +1,35 @@
+{
+  "experiment": "g8_queue_min2_burst_gpu",
+  "started_at": 1793975832.0607047,
+  "ready_after_s": 38.86,
+  "loadgen_exit": 0,
+  "load_started_at": 1793975886.451746,
+  "phases": [
+    {
+      "phase": 0,
+      "rate_rps": 8.0,
+      "start": 1793975886.451746,
+      "end": 1793975946.451746
+    },
+    {
+      "phase": 1,
+      "rate_rps": 34.0,
+      "start": 1793975946.451746,
+      "end": 1793975976.451746
+    },
+    {
+      "phase": 2,
+      "rate_rps": 8.0,
+      "start": 1793975976.451746,
+      "end": 1793976096.451746
+    }
+  ],
+  "ended_at": 1793976247.6644313,
+  "export_errors": [],
+  "exit_codes": {
+    "router": 0,
+    "controller": 0
+  },
+  "orphan_ports": [],
+  "valid": true
+}

@@ -1,0 +1,6 @@
+# Set from E1: ~12 in flight at 20 rps -> ~0.6s per request (Little's law).
+# At 0.7 x mu = 14 rps that's ~8-9 in flight; 10 leaves a little headroom.
+policy:
+  kind: queue
+  target_concurrency: 10
+  kv_high: 0.9

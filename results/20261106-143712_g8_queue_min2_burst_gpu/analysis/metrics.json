@@ -1,0 +1,55 @@
+{
+  "name": "g8_queue_min2_burst_gpu",
+  "policy": "queue_gpu",
+  "run_dir": "results/20261106-143712_g8_queue_min2_burst_gpu",
+  "git_sha": null,
+  "valid": true,
+  "phases": [
+    {
+      "phase": 0,
+      "rate_rps": 8.0,
+      "requests": 471,
+      "ok": 471,
+      "shed": 0,
+      "ttft_p50_s": 0.0492095947265625,
+      "ttft_p95_s": 0.15569698810577393,
+      "ttft_p99_s": 0.19179611206054692,
+      "within_slo": 1.0
+    },
+    {
+      "phase": 1,
+      "rate_rps": 34.0,
+      "requests": 1042,
+      "ok": 1042,
+      "shed": 0,
+      "ttft_p50_s": 2.4865130186080933,
+      "ttft_p95_s": 13.528845953941346,
+      "ttft_p99_s": 15.187183763980865,
+      "within_slo": 0.472168905950096
+    },
+    {
+      "phase": 2,
+      "rate_rps": 8.0,
+      "requests": 968,
+      "ok": 968,
+      "shed": 0,
+      "ttft_p50_s": 0.0779428482055664,
+      "ttft_p95_s": 8.25158425569533,
+      "ttft_p99_s": 13.620294411182405,
+      "within_slo": 0.8977272727272727
+    }
+  ],
+  "burst": {
+    "phase": 1,
+    "duration_s": 30.0,
+    "ready_at_onset": 2,
+    "scale_ups_before_onset": 0,
+    "detection_s": 6.161091566085815,
+    "capacity_ready_s": 55.34203124046326,
+    "capacity_after_burst_s": 25.342031240463257
+  },
+  "replica_s_load": 563.8361876010895,
+  "peak_outstanding": 619.0,
+  "scale_ups": 2,
+  "scale_downs": 1
+}

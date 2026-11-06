@@ -184,5 +184,17 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
       burst p95 15.6s -> 13.4s only: capacity still arrives late.
   Conclusion: for bursts shorter than T_cold, signal choice doesn't protect the
   SLO; headroom does, admission bounds the worst case, late binding enables both.
+- GPU session, RTX A5000 (24 GB), vLLM 0.33.0, torch 2.14.0+cu130, driver 595.91:
+  E0 cold start: ~115s on a fresh machine (kernel/compile caches), ~38s warm.
+  E1: mu ~20 rps per replica (flat at 20 rps, unbounded at 40; ~18-20
+  completions/s at saturation), ~2x the mock's placeholder 9.4.
+  KV: 404,992 tokens per replica at 0.28 utilization; KV memory never binds.
+  D9 confirmed: 5,359 requests, 0 prompt-length mismatches vs the tokenizer.
+  vLLM exposes inter_token_latency_seconds (per token), not
+  time_per_output_token_seconds; renamed in metrics_map and rules.
+  Sweep above ~40 rps saturated the single-process load generator
+  (lag 379s, ~3,000 in flight); its checks marked the run invalid.
+  Pod gotchas: RunPod nginx holds 8001 (replicas moved to 8201+); vLLM needs
+  ninja (added to bootstrap); runpodctl has no API key by default.
 ## Budget
 RunPod credits: ~$14. GPU hours used: 0.

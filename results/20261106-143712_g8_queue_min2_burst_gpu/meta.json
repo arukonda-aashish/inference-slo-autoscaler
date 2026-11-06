@@ -1,0 +1,9 @@
+{
+  "experiment": "g8_queue_min2_burst_gpu",
+  "description": "E8 on real vLLM (RTX A5000). Queue policy, floor of 2 replicas; also tests co-location (E1b).",
+  "created_at": 1793975832.0524726,
+  "host": "539a89942e75",
+  "python": "3.12.3",
+  "git_sha": null,
+  "git_dirty": null
+}

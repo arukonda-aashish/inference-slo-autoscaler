@@ -1,0 +1,6 @@
+name: g3_queue_burst_gpu
+description: E3 on real vLLM (RTX A5000). Queue policy, burst sized from measured mu.
+policy: configs/policies/queue_gpu.yaml
+profile: configs/profiles/burst_gpu.yaml
+controller: configs/controller_gpu.yaml
+ready_timeout_s: 400  # real cold start was ~117s on first launch

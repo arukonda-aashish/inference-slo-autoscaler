@@ -1,0 +1,55 @@
+{
+  "name": "g3_queue_burst_gpu",
+  "policy": "queue_gpu",
+  "run_dir": "results/20261106-142859_g3_queue_burst_gpu",
+  "git_sha": null,
+  "valid": true,
+  "phases": [
+    {
+      "phase": 0,
+      "rate_rps": 8.0,
+      "requests": 471,
+      "ok": 471,
+      "shed": 0,
+      "ttft_p50_s": 0.04300642013549805,
+      "ttft_p95_s": 0.11143267154693604,
+      "ttft_p99_s": 0.15453188419342043,
+      "within_slo": 1.0
+    },
+    {
+      "phase": 1,
+      "rate_rps": 34.0,
+      "requests": 1042,
+      "ok": 1042,
+      "shed": 0,
+      "ttft_p50_s": 5.631562829017639,
+      "ttft_p95_s": 13.617946720123294,
+      "ttft_p99_s": 14.286259634494769,
+      "within_slo": 0.33493282149712095
+    },
+    {
+      "phase": 2,
+      "rate_rps": 8.0,
+      "requests": 968,
+      "ok": 968,
+      "shed": 0,
+      "ttft_p50_s": 0.06742823123931885,
+      "ttft_p95_s": 10.589982759952544,
+      "ttft_p99_s": 13.4311131978035,
+      "within_slo": 0.8202479338842975
+    }
+  ],
+  "burst": {
+    "phase": 1,
+    "duration_s": 30.0,
+    "ready_at_onset": 1,
+    "scale_ups_before_onset": 0,
+    "detection_s": 5.888012170791626,
+    "capacity_ready_s": null,
+    "capacity_after_burst_s": null
+  },
+  "replica_s_load": 316.28014731407166,
+  "peak_outstanding": 541.0,
+  "scale_ups": 3,
+  "scale_downs": 0
+}

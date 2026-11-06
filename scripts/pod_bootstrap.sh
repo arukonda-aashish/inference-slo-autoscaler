@@ -5,9 +5,10 @@ set -euo pipefail
 echo "--- GPU"
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv
 
-echo "--- system packages (prometheus, rsync)"
+# ninja: vLLM compiles GPU kernels on first launch and fails without it.
+echo "--- system packages (prometheus, rsync, ninja)"
 apt-get update -qq
-DEBIAN_FRONTEND=noninteractive apt-get install -y -qq prometheus rsync > /dev/null
+DEBIAN_FRONTEND=noninteractive apt-get install -y -qq prometheus rsync ninja-build > /dev/null
 
 echo "--- uv"
 command -v uv > /dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh

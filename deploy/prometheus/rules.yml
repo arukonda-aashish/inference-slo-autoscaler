@@ -29,7 +29,7 @@ groups:
       - record: isa:ttft:p99_30s
         expr: histogram_quantile(0.99, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket[30s])))
       - record: isa:tpot:p95_30s
-        expr: histogram_quantile(0.95, sum by (le) (rate(vllm:time_per_output_token_seconds_bucket[30s])))
+        expr: histogram_quantile(0.95, sum by (le) (rate(vllm:inter_token_latency_seconds_bucket[30s])))
       - record: isa:router_ttft:p95_30s
         expr: histogram_quantile(0.95, sum by (le) (rate(router_ttft_seconds_bucket[30s])))
 
