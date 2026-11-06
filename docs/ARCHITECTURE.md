@@ -246,6 +246,11 @@ The honest weak point. Three replicas on one GPU don't have three GPUs' worth of
 
 So it gets measured, as experiment E1b: aggregate saturated throughput at 1, 2, and 3 replicas. If 2 replicas give ≥1.7× throughput, the co-located design is sound. If much less, the fallback is a 2×3090 pod for the Phase 6 comparison only — about 2 hours at double the rate, still inside budget. Either result goes in the writeup; the mock gets a scaling_efficiency parameter fitted from it so the local simulation stays honest.
 
+**Measured (step 13):** the risk materialized. On an RTX A5000, two co-located
+replicas delivered ~11 rps combined against one replica's ~15 under burst
+load, and concurrent starts failed vLLM's free-memory check. See README
+findings 6 and 7.
+
 7. Experiments
 ID	Question	Setup	Primary chart
 E0	What is T_cold?	5 cold starts	Startup phase breakdown

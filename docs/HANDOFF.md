@@ -7,8 +7,9 @@ Inference SLO Autoscaler: autoscaling LLM serving on queue-derived signals
 instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
 
 ## Current state
-- Last completed step: 12 — late binding + admission control; E5, E7, E8 on the mock
-- Next step: 13 — GPU session: vLLM backend, E0/E1 on real hardware, one burst run
+- Last completed step: 14 — writeup (README.md)
+- Status: complete. Next experiment if resumed: headroom on separate GPUs
+  (2-GPU pod), and staggered scale-up (max_step_up: 1) on a shared GPU.
 
 ## Decisions
 - D1: Custom controller with pluggable backends, not KEDA. RunPod pods are
@@ -116,6 +117,12 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
   and when disabled it's route-on-arrival through the same code path.
 - D41: isa:waiting:sum includes router_queue_depth, so the controller sees a
   backlog wherever it sits.
+- D42: Co-located replicas are not capacity on this hardware (2 replicas
+  delivered less than 1). Headroom must mean separate GPUs. The cause (GPU
+  time-slicing vs CPU contention on 9 vCPUs) is not separated.
+- D43: On a shared GPU, simultaneous vLLM starts fail their free-memory check.
+  Any rerun should stagger starts (max_step_up: 1) and back off between
+  replacement attempts.
   
 
 ## Open questions
@@ -196,5 +203,13 @@ instead of GPU utilization. Full design in docs/ARCHITECTURE.md.
   (lag 379s, ~3,000 in flight); its checks marked the run invalid.
   Pod gotchas: RunPod nginx holds 8001 (replicas moved to 8201+); vLLM needs
   ninja (added to bootstrap); runpodctl has no API key by default.
+- GPU bursts (2 runs each): g3 queue from 1 replica: burst p95 13.4-13.6s,
+  33-34% within SLO, 316-318 replica-s. g8 floor of 2: 13.5-14.7s, 45-47%,
+  563-564 replica-s. Effective capacity from queue growth during the burst:
+  1 replica ~15.1-16.4 rps; 2 co-located replicas ~11.3-11.5 rps combined.
+  Warm cold start 36-37s idle, 48-49s when started under burst load.
+  g3's scale-ups (1 -> 3, two at once) failed in both runs: vLLM saw 2.34 GiB
+  free vs 6.59 GiB requested and exited; replacements (again two at once)
+  failed the same way.
 ## Budget
 RunPod credits: ~$14. GPU hours used: 0.
